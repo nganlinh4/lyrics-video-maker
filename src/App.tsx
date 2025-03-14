@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import AudioUpload from './components/AudioUpload.tsx';
-import LyricsUpload from './components/LyricsUpload.tsx';
-import LyricsVideo from './components/LyricsVideo.tsx';
-import VideoPreview from './components/VideoPreview.tsx';
+import AudioUpload from './components/AudioUpload';
+import LyricsUpload from './components/LyricsUpload';
+import LyricsVideo from './components/LyricsVideo';
+import VideoPreview from './components/VideoPreview';
+import RenderControl from './components/RenderControl';
 import styled from 'styled-components';
-
-interface LyricEntry {
-  start: number;
-  end: number;
-  text: string;
-}
+import { Player } from '@remotion/player';
+import { LyricEntry, LyricsVideoContent } from './components/LyricsVideo';
 
 const Container = styled.div`
   display: flex;
@@ -27,71 +24,122 @@ const Title = styled.h1`
   font-size: 2.5rem;
 `;
 
-const Button = styled.button`
-  background: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%);
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+const Card = styled.div`
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin: 10px 0;
+  width: 100%;
+  max-width: 800px;
+`;
 
-  &:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
-  }
+const PreviewContainer = styled.div`
+  width: 100%;
+  max-width: 800px;
+  margin: 20px 0;
+`;
+
+const StatusText = styled.div<{ error?: boolean }>`
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: ${props => props.error ? '#ffebee' : '#e8f5e9'};
+  color: ${props => props.error ? '#d32f2f' : '#2e7d32'};
 `;
 
 const App: React.FC = () => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [lyrics, setLyrics] = useState<LyricEntry[] | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string>('');
-  const [generateVideo, setGenerateVideo] = useState(false);
+  const [videoPath, setVideoPath] = useState<string>('');
+  const [audioUrl, setAudioUrl] = useState<string>('');
+  const [durationInSeconds, setDurationInSeconds] = useState<number>(0);
 
   const handleAudioUpload = (file: File | null) => {
     setAudioFile(file);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setAudioUrl(url);
+    } else {
+      setAudioUrl('');
+    }
   };
 
   const handleLyricsUpload = (lyricsData: LyricEntry[] | null) => {
     setLyrics(lyricsData);
-  };
-
-  const handleGenerateVideo = () => {
-    if (audioFile && lyrics) {
-      setGenerateVideo(true);
+    if (lyricsData && lyricsData.length > 0) {
+      // Calculate duration based on the end time of the last lyric + 2 seconds
+      const lastLyricEnd = Math.max(...lyricsData.map(lyric => lyric.end));
+      setDurationInSeconds(lastLyricEnd + 2);
     } else {
-      alert('Please upload both audio and lyrics files.');
+      setDurationInSeconds(0);
     }
   };
 
-  useEffect(() => {
-    if (generateVideo) {
-      const audioUrl = URL.createObjectURL(audioFile!);
-      const inputProps = {
-        audioUrl,
-        lyrics,
-      };
-      const command = `npx remotion render src/remotion/root.tsx out.mp4 --props='${JSON.stringify(inputProps)}'`;
-      
-      // Placeholder for execute_command tool use.  I cannot directly call the tool here.
-      console.log("Executing command:", command);
+  const handleRenderComplete = (path: string) => {
+    setVideoPath(path);
+  };
 
-      setGenerateVideo(false); // Reset the state
-    }
-  }, [generateVideo, audioFile, lyrics]);
+  // Clean up object URLs when component unmounts or when the audio file changes
+  useEffect(() => {
+    return () => {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
 
   return (
     <Container>
       <Title>Lyrics Video Maker</Title>
-      <AudioUpload onAudioUpload={handleAudioUpload} />
-      <LyricsUpload onLyricsUpload={handleLyricsUpload} />
+      
+      <Card>
+        <h2>Step 1: Upload Audio</h2>
+        <AudioUpload onAudioUpload={handleAudioUpload} />
+      </Card>
+      
+      <Card>
+        <h2>Step 2: Upload Lyrics</h2>
+        <LyricsUpload onLyricsUpload={handleLyricsUpload} />
+      </Card>
+      
+      {audioFile && lyrics && durationInSeconds > 0 && (
+        <Card>
+          <h2>Step 3: Preview</h2>
+          <PreviewContainer>
+            <Player
+              component={LyricsVideoContent}
+              durationInFrames={Math.max(30, durationInSeconds * 30)}
+              compositionWidth={1280}
+              compositionHeight={720}
+              fps={30}
+              controls
+              inputProps={{
+                audioUrl,
+                lyrics,
+                durationInSeconds
+              }}
+            />
+          </PreviewContainer>
+        </Card>
+      )}
+      
       {audioFile && lyrics && (
-        <>
-          <LyricsVideo />
-          <Button onClick={handleGenerateVideo}>Generate Video</Button>
-          {/* <VideoPreview videoUrl={videoUrl} />  */}
-        </>
+        <Card>
+          <h2>Step 4: Render Video</h2>
+          <RenderControl 
+            audioFile={audioFile} 
+            lyrics={lyrics} 
+            onRenderComplete={handleRenderComplete} 
+          />
+        </Card>
+      )}
+      
+      {videoPath && (
+        <Card>
+          <h2>Step 5: Final Video</h2>
+          <VideoPreview videoUrl={videoPath} />
+        </Card>
       )}
     </Container>
   );

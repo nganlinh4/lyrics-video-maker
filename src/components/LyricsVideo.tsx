@@ -1,44 +1,68 @@
 import React from 'react';
-import { AbsoluteFill, useCurrentFrame, interpolate, Audio, useVideoConfig, Composition} from 'remotion';
+import { AbsoluteFill, useCurrentFrame, interpolate, Audio, useVideoConfig, Composition } from 'remotion';
 import * as Remotion from 'remotion';
 
-interface LyricEntry {
+export interface LyricEntry {
   start: number;
   end: number;
   text: string;
 }
 
-interface InputProps {
+export interface LyricsVideoProps {
   audioUrl: string;
   lyrics: LyricEntry[];
+  durationInSeconds: number;
 }
 
-const LyricsContent: React.FC = () => {
-  const { audioUrl, lyrics, ...videoConfig } = useVideoConfig() as InputProps & Remotion.VideoConfig;
+export const LyricsVideoContent: React.FC<LyricsVideoProps> = ({ audioUrl, lyrics, durationInSeconds }) => {
   const frame = useCurrentFrame();
-  const fps = 30;
+  const { fps } = useVideoConfig();
+
+  const currentTimeInSeconds = frame / fps;
 
   return (
-    <AbsoluteFill>
+    <AbsoluteFill style={{ backgroundColor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <Audio src={audioUrl} />
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' }}>
+      <div style={{ width: '80%', textAlign: 'center' }}>
         {lyrics.map((lyric, index) => {
-          const fadeDuration = 5;
+          const fadeDuration = 0.2; // in seconds
           const opacity = interpolate(
-            frame,
-            [lyric.start * fps - fadeDuration, lyric.start * fps, lyric.end * fps, lyric.end * fps + fadeDuration],
+            currentTimeInSeconds,
+            [lyric.start - fadeDuration, lyric.start, lyric.end, lyric.end + fadeDuration],
             [0, 1, 1, 0],
             {
               extrapolateLeft: 'clamp',
               extrapolateRight: 'clamp',
             }
           );
+
+          const scale = interpolate(
+            currentTimeInSeconds,
+            [lyric.start - fadeDuration, lyric.start, lyric.end, lyric.end + fadeDuration],
+            [0.8, 1, 1, 0.8],
+            {
+              extrapolateLeft: 'clamp',
+              extrapolateRight: 'clamp',
+            }
+          );
+
           return (
-            <div key={index} style={{
-              fontSize: 50,
-              color: 'white',
-              opacity,
-            }}>{lyric.text}</div>
+            <div 
+              key={index} 
+              style={{
+                fontSize: 50,
+                fontWeight: 'bold',
+                color: 'white',
+                opacity,
+                transform: `scale(${scale})`,
+                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
+                position: 'absolute',
+                width: '100%',
+                display: opacity > 0.01 ? 'block' : 'none',
+              }}
+            >
+              {lyric.text}
+            </div>
           );
         })}
       </div>
@@ -46,18 +70,34 @@ const LyricsContent: React.FC = () => {
   );
 };
 
-const LyricsVideo: React.FC = () => {
- // No need for useVideoConfig here
+interface LyricsVideoComponentProps {
+  audioUrl?: string;
+  lyrics?: LyricEntry[];
+  durationInSeconds?: number;
+}
+
+// Use a type assertion to satisfy Remotion's component type requirements
+const LyricsVideo: React.FC<LyricsVideoComponentProps> = ({ 
+  audioUrl = '', 
+  lyrics = [], 
+  durationInSeconds = 0 
+}) => {
   return (
-    <Composition
-      id="lyrics-video"
-      component={LyricsContent}
-      durationInFrames={150}
-      fps={30}
- // Default FPS
-      width={1280} // Default widt}
-      height={720} // Default height
-    />
+    <div style={{ width: '100%', marginBottom: '20px' }}>
+      <Composition
+        id="lyrics-video"
+        component={LyricsVideoContent as React.FC<Record<string, unknown>>}
+        durationInFrames={Math.max(30, durationInSeconds * 30)} // At least 1 second, 30 fps
+        fps={30}
+        width={1280}
+        height={720}
+        defaultProps={{
+          audioUrl,
+          lyrics,
+          durationInSeconds,
+        }}
+      />
+    </div>
   );
 };
 

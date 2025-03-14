@@ -1,12 +1,22 @@
 import React from 'react';
-import { registerRoot } from 'remotion';
-import LyricsVideo from '../components/LyricsVideo';
+import { registerRoot, Composition } from 'remotion';
+import { LyricsVideoContent, LyricsVideoProps } from '../components/LyricsVideo';
 
-const Root: React.FC = () => {
+// This file will be used by Remotion for rendering
+const RemotionRoot: React.FC = () => {
   return (
-    <LyricsVideo
- />
+    <>
+      <Composition
+        id="lyrics-video"
+        component={LyricsVideoContent as React.FC<Record<string, unknown>>}
+        durationInFrames={1000} // Will be overridden by props
+        fps={30}
+        width={1280}
+        height={720}
+        // Props will be passed via command line
+      />
+    </>
   );
 };
 
-registerRoot(Root);
+registerRoot(RemotionRoot);
