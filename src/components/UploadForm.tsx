@@ -219,11 +219,8 @@ const UploadForm: React.FC = () => {
       setError(null);
       setSuccess(null);
 
-      // Create an object URL for the audio file
-      const audioUrl = URL.createObjectURL(audioFile);
-
       // Start the rendering process
-      const outputPath = await remotionService.renderVideo(audioUrl, lyrics, (progress) => {
+      const outputPath = await remotionService.renderVideo(audioFile, lyrics, (progress) => {
         setProgress(progress.progress * 100);
         if (progress.status === 'error') {
           setError(progress.error || 'An error occurred during rendering');
@@ -231,11 +228,7 @@ const UploadForm: React.FC = () => {
         }
       });
 
-      // Clean up the object URL
-      URL.revokeObjectURL(audioUrl);
 
-      // Video rendered successfully
-      setIsRendering(false);
       setProgress(100);
       setSuccess(`Video rendered successfully!`);
       setVideoPath(outputPath);

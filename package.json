@@ -9,6 +9,12 @@
     "@testing-library/jest-dom": "6.6.3",
     "@testing-library/react": "16.2.0",
     "@testing-library/user-event": "13.5.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.12",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-player": "2.16.0",
@@ -21,15 +27,21 @@
     "@remotion/cli": "4.0.278",
     "@remotion/eslint-plugin": "4.0.278",
     "@types/react": "19.0.10",
-    "@types/react-dom": "19.0.4"
+    "@types/react-dom": "19.0.4",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.8.2"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "cross-env PORT=3002 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "studio": "remotion studio src/remotion/index.ts",
-    "render": "remotion render src/remotion/index.ts lyrics-video out/video.mp4"
+    "server:build": "tsc --project server/tsconfig.json",
+    "server:start": "cross-env PORT=3003 node server/dist/index.js",
+    "server:dev": "concurrently \"npm run start\" \"npm run server:start\"",
+    "postinstall": "npm run server:build"
   },
   "eslintConfig": {
     "extends": [

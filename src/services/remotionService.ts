@@ -1,5 +1,7 @@
 import { LyricEntry } from '../types';
 
+const SERVER_URL = 'http://localhost:3003';
+
 export interface RenderProgress {
   progress: number;
   durationInFrames: number;
@@ -11,28 +13,68 @@ export interface RenderProgress {
 export class RemotionService {
   private compositionId = 'lyrics-video';
   private fps = 30;
-  private width = 1280;
-  private height = 720;
 
-  constructor() {
-    // No need for directory creation in the browser context
-    // This would be handled by the server in a real implementation
-  }
-
-  /**
-   * Render a lyrics video with Remotion
-   */
   async renderVideo(
-    audioUrl: string,
+    audioFile: File,
     lyrics: LyricEntry[],
     onProgress?: (progress: RenderProgress) => void
   ): Promise<string> {
     try {
-      throw new Error(
-        'Video rendering requires a server-side environment. ' +
-        'Please implement a backend service to handle the rendering process. ' +
-        'The preview functionality will continue to work in the browser.'
-      );
+      // Upload audio file
+      const formData = new FormData();
+      formData.append('audio', audioFile);
+
+      const uploadResponse = await fetch(`${SERVER_URL}/upload/audio`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload audio file');
+      }
+
+      const { url: audioUrl } = await uploadResponse.json();
+
+      // Calculate video duration
+      const lastLyricEnd = Math.max(...lyrics.map(l => l.end));
+      const durationInSeconds = lastLyricEnd + 2; // 2 seconds buffer at the end
+
+      // Start rendering
+      onProgress?.({
+        progress: 0,
+        durationInFrames: Math.round(durationInSeconds * this.fps),
+        renderedFrames: 0,
+        status: 'rendering'
+      });
+
+      // Request video rendering
+      const renderResponse = await fetch(`${SERVER_URL}/render`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          audioUrl,
+          lyrics,
+          durationInSeconds,
+        }),
+      });
+
+      if (!renderResponse.ok) {
+        const error = await renderResponse.json();
+        throw new Error(error.details || 'Failed to render video');
+      }
+
+      const { videoUrl } = await renderResponse.json();
+
+      onProgress?.({
+        progress: 1,
+        durationInFrames: Math.round(durationInSeconds * this.fps),
+        renderedFrames: Math.round(durationInSeconds * this.fps),
+        status: 'success'
+      });
+
+      return videoUrl;
     } catch (error) {
       console.error('Error rendering video:', error);
       onProgress?.({
@@ -40,18 +82,12 @@ export class RemotionService {
         durationInFrames: 0,
         renderedFrames: 0,
         status: 'error',
-        error: error instanceof Error 
-          ? error.message 
-          : 'Video rendering requires a server environment'
+        error: error instanceof Error ? error.message : String(error)
       });
       throw error;
     }
   }
-  
 
-  /**
-   * Clean up resources after rendering
-   */
   cleanup() {
     // Any cleanup needed
   }

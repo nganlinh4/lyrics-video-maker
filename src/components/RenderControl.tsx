@@ -91,10 +91,8 @@ export const RenderControl: React.FC<Props> = ({
     setError(null);
 
     try {
-      const audioUrl = URL.createObjectURL(audioFile);
-      
       const videoPath = await remotionService.renderVideo(
-        audioUrl,
+        audioFile,
         lyrics,
         (progress) => {
           if (progress.status === 'error') {
