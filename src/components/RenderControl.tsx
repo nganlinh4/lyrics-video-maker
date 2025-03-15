@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Player } from '@remotion/player';
 import { LyricEntry } from '../types';
 import { LyricsVideoContent } from './LyricsVideo';
+import remotionService from '../services/remotionService';
 
 const Container = styled.div`
   margin: 20px 0;
@@ -50,6 +51,14 @@ const ProgressText = styled.div`
   color: #666;
 `;
 
+const InfoText = styled.div`
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  color: #666;
+`;
+
 interface Props {
   audioFile: File | null;
   lyrics: LyricEntry[] | null;
@@ -82,10 +91,23 @@ export const RenderControl: React.FC<Props> = ({
     setError(null);
 
     try {
-      // Implementation of render logic here
-      // For now, just simulate rendering
+      const audioUrl = URL.createObjectURL(audioFile);
+      
+      const videoPath = await remotionService.renderVideo(
+        audioUrl,
+        lyrics,
+        (progress) => {
+          if (progress.status === 'error') {
+            setError(progress.error || 'An error occurred during rendering');
+            setIsRendering(false);
+          } else {
+            setProgress(progress.progress);
+          }
+        }
+      );
+
       setIsRendering(false);
-      onRenderComplete('dummy-path.mp4');
+      onRenderComplete(videoPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setIsRendering(false);
@@ -94,6 +116,11 @@ export const RenderControl: React.FC<Props> = ({
 
   return (
     <Container>
+      <InfoText>
+        Note: This is a preview environment. Video rendering requires a server-side component. 
+        The preview above shows how your video will look, but downloading the final video 
+        is not available in this browser-only version.
+      </InfoText>
       <Button
         onClick={handleRender}
         disabled={isRendering || !audioFile || !lyrics}
