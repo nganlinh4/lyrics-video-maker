@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { Player } from '@remotion/player';
 import AudioUpload from './components/AudioUpload';
 import LyricsUpload from './components/LyricsUpload';
-import { LyricsVideo, LyricsVideoContent } from './components/LyricsVideo';
+import { LyricsVideoContent } from './components/LyricsVideo';
 import VideoPreview from './components/VideoPreview';
 import { RenderControl } from './components/RenderControl';
 import { LyricEntry } from './types';
