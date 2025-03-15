@@ -129,8 +129,8 @@ const App: React.FC = () => {
               fps={30}
               controls
               inputProps={{
-                audioFile,
-                lyrics,
+                audioUrl: audioUrl,
+                lyrics: lyrics || [],
                 durationInSeconds
               }}
             />

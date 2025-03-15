@@ -5,7 +5,15 @@ export interface LyricEntry {
 }
 
 export interface Props {
-  audioFile: File;
+  audioUrl: string;
+  lyrics: LyricEntry[];
+  durationInSeconds: number;
+}
+
+// Interface for components that can work with either a File or URL
+export interface AudioProps {
+  audioFile?: File;
+  audioUrl?: string;
   lyrics: LyricEntry[];
   durationInSeconds: number;
 }

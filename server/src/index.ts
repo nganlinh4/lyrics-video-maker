@@ -3,19 +3,14 @@ import cors from 'cors';
 import multer from 'multer';
 import path from 'path';
 import { bundle } from '@remotion/bundler';
-import { renderMedia, selectComposition } from '@remotion/renderer';
-
-interface BundleResult {
-  url: string;
-  [key: string]: any;
-}
+import { renderMedia, selectComposition, getCompositions } from '@remotion/renderer';
 
 const app = express();
 const port = process.env.PORT || 3003;
 
-// Ensure directories exist at the project root
-const uploadsDir = path.join(__dirname, '../../uploads');
-const outputDir = path.join(__dirname, '../../output');
+// Ensure directories exist
+const uploadsDir = path.join(__dirname, '../uploads');
+const outputDir = path.join(__dirname, '../output');
 [uploadsDir, outputDir].forEach((dir) => {
   if (!require('fs').existsSync(dir)) {
     require('fs').mkdirSync(dir, { recursive: true });
@@ -54,28 +49,51 @@ app.post('/upload/audio', upload.single('audio'), (req, res) => {
 // Render video endpoint
 app.post('/render', async (req, res) => {
   try {
-    const { audioUrl, lyrics, durationInSeconds } = req.body;
-    if (!audioUrl || !lyrics || !durationInSeconds) {
+    const { audioFile, lyrics, durationInSeconds } = req.body;
+    if (!audioFile || !lyrics || !durationInSeconds) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
     const compositionId = 'lyrics-video';
     const fps = 30;
     const outputFile = `lyrics-video-${Date.now()}.mp4`;
-    const outputPath = path.join(__dirname, '..', 'output', outputFile);
-    const entryPoint = path.join(__dirname, '../../src/remotion/root.tsx');
+    const outputPath = path.join(outputDir, outputFile);
+    
+    // Create a URL that can be accessed via HTTP instead of file:// protocol
+    const audioUrl = `http://localhost:${port}/uploads/${audioFile}`;
+    
+    // Use index.ts as the entry point which contains registerRoot()
+    const entryPoint = path.join(__dirname, '../../src/remotion/index.ts');
 
     // Bundle the remotion project
     console.log('Bundling Remotion project...');
-    const bundled = await bundle(entryPoint) as unknown as BundleResult;
+    const bundleResult = await bundle(entryPoint);
+    
+    console.log('Bundle completed');
+    
+    if (!bundleResult) {
+      throw new Error('Bundling failed: No result returned from bundler');
+    }
 
     // Select the composition
     console.log('Selecting composition...');
+    console.log('Using serve URL:', bundleResult);
+    
+    // Get available compositions (for debugging)
+    const compositions = await getCompositions(bundleResult, {
+      inputProps: {
+        audioUrl: audioUrl, // Use HTTP URL instead of file:// protocol
+        lyrics,
+        durationInSeconds
+      }
+    });
+    console.log('Available compositions:', compositions.map(c => c.id));
+    
     const composition = await selectComposition({
-      serveUrl: bundled.url,
+      serveUrl: bundleResult,
       id: compositionId,
       inputProps: {
-        audioUrl,
+        audioUrl: audioUrl, // Use HTTP URL instead of file:// protocol
         lyrics,
         durationInSeconds
       },
@@ -85,11 +103,11 @@ app.post('/render', async (req, res) => {
     console.log('Starting rendering process...');
     await renderMedia({
       composition,
-      serveUrl: bundled.url,
+      serveUrl: bundleResult,
       codec: 'h264',
       outputLocation: outputPath,
       inputProps: {
-        audioUrl,
+        audioUrl: audioUrl, // Use HTTP URL instead of file:// protocol
         lyrics,
         durationInSeconds
       },

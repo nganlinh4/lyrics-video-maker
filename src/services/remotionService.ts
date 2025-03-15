@@ -33,7 +33,7 @@ export class RemotionService {
         throw new Error('Failed to upload audio file');
       }
 
-      const { url: audioUrl } = await uploadResponse.json();
+      const { filename } = await uploadResponse.json();
 
       // Calculate video duration
       const lastLyricEnd = Math.max(...lyrics.map(l => l.end));
@@ -54,7 +54,7 @@ export class RemotionService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          audioUrl,
+          audioFile: filename,
           lyrics,
           durationInSeconds,
         }),

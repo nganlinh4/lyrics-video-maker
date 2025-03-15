@@ -11,10 +11,18 @@ const bundler_1 = require("@remotion/bundler");
 const renderer_1 = require("@remotion/renderer");
 const app = (0, express_1.default)();
 const port = process.env.PORT || 3003;
+// Ensure directories exist
+const uploadsDir = path_1.default.join(__dirname, '../uploads');
+const outputDir = path_1.default.join(__dirname, '../output');
+[uploadsDir, outputDir].forEach((dir) => {
+    if (!require('fs').existsSync(dir)) {
+        require('fs').mkdirSync(dir, { recursive: true });
+    }
+});
 // Configure multer for file uploads
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        cb(null, uploadsDir);
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + path_1.default.extname(file.originalname));
@@ -24,15 +32,8 @@ const upload = (0, multer_1.default)({ storage });
 // Middleware
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
-app.use('/uploads', express_1.default.static('uploads'));
-app.use('/output', express_1.default.static('output'));
-// Ensure directories exist
-['uploads', 'output'].forEach((dir) => {
-    const dirPath = path_1.default.join(__dirname, '..', dir);
-    if (!require('fs').existsSync(dirPath)) {
-        require('fs').mkdirSync(dirPath, { recursive: true });
-    }
-});
+app.use('/uploads', express_1.default.static(uploadsDir));
+app.use('/output', express_1.default.static(outputDir));
 // Upload endpoint for audio file
 app.post('/upload/audio', upload.single('audio'), (req, res) => {
     if (!req.file) {
@@ -46,25 +47,42 @@ app.post('/upload/audio', upload.single('audio'), (req, res) => {
 // Render video endpoint
 app.post('/render', async (req, res) => {
     try {
-        const { audioUrl, lyrics, durationInSeconds } = req.body;
-        if (!audioUrl || !lyrics || !durationInSeconds) {
+        const { audioFile, lyrics, durationInSeconds } = req.body;
+        if (!audioFile || !lyrics || !durationInSeconds) {
             return res.status(400).json({ error: 'Missing required parameters' });
         }
         const compositionId = 'lyrics-video';
         const fps = 30;
         const outputFile = `lyrics-video-${Date.now()}.mp4`;
-        const outputPath = path_1.default.join(__dirname, '..', 'output', outputFile);
-        const entryPoint = path_1.default.join(__dirname, '../../src/remotion/root.tsx');
+        const outputPath = path_1.default.join(outputDir, outputFile);
+        // Create a URL that can be accessed via HTTP instead of file:// protocol
+        const audioUrl = `http://localhost:${port}/uploads/${audioFile}`;
+        // Use index.ts as the entry point which contains registerRoot()
+        const entryPoint = path_1.default.join(__dirname, '../../src/remotion/index.ts');
         // Bundle the remotion project
         console.log('Bundling Remotion project...');
-        const bundled = await (0, bundler_1.bundle)(entryPoint);
+        const bundleResult = await (0, bundler_1.bundle)(entryPoint);
+        console.log('Bundle completed');
+        if (!bundleResult) {
+            throw new Error('Bundling failed: No result returned from bundler');
+        }
         // Select the composition
         console.log('Selecting composition...');
+        console.log('Using serve URL:', bundleResult);
+        // Get available compositions (for debugging)
+        const compositions = await (0, renderer_1.getCompositions)(bundleResult, {
+            inputProps: {
+                audioUrl: audioUrl, // Use HTTP URL instead of file:// protocol
+                lyrics,
+                durationInSeconds
+            }
+        });
+        console.log('Available compositions:', compositions.map(c => c.id));
         const composition = await (0, renderer_1.selectComposition)({
-            serveUrl: bundled.url,
+            serveUrl: bundleResult,
             id: compositionId,
             inputProps: {
-                audioUrl,
+                audioUrl: audioUrl, // Use HTTP URL instead of file:// protocol
                 lyrics,
                 durationInSeconds
             },
@@ -73,11 +91,11 @@ app.post('/render', async (req, res) => {
         console.log('Starting rendering process...');
         await (0, renderer_1.renderMedia)({
             composition,
-            serveUrl: bundled.url,
+            serveUrl: bundleResult,
             codec: 'h264',
             outputLocation: outputPath,
             inputProps: {
-                audioUrl,
+                audioUrl: audioUrl, // Use HTTP URL instead of file:// protocol
                 lyrics,
                 durationInSeconds
             },

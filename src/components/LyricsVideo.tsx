@@ -13,11 +13,10 @@ const CENTER_OFFSET = -30; // Move center position slightly up for better visual
 const ALBUM_COVER_SIZE = 300; // Size of the album cover
 const ALBUM_COVER_MARGIN = 40; // Margin from the left edge
 
-export const LyricsVideoContent: React.FC<Props> = ({ audioFile, lyrics, durationInSeconds }) => {
+export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, durationInSeconds }) => {
   const frame = useCurrentFrame();
   const { fps, height, width } = useVideoConfig();
   const currentTimeInSeconds = frame / fps;
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   
   // Get the index of the current active lyric
   const activeLyricIndex = useMemo(() => {
@@ -25,17 +24,6 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioFile, lyrics, duratio
       (lyric) => currentTimeInSeconds >= lyric.start && currentTimeInSeconds <= lyric.end
     ) ?? -1;
   }, [lyrics, currentTimeInSeconds]);
-
-  useEffect(() => {
-    if (!audioFile || audioFile.size === 0) return;
-
-    const url = URL.createObjectURL(audioFile);
-    setAudioUrl(url);
-
-    return () => {
-      if (url) URL.revokeObjectURL(url);
-    };
-  }, [audioFile]);
 
   // Calculate the progress percentage of the current active lyric
   const getActiveProgress = (lyric: LyricEntry) => {
@@ -295,15 +283,44 @@ const createSilentAudio = () => {
 // Update Props interface to make all fields required for the Composition
 interface LyricsVideoComponentProps {
   audioFile?: File;
+  audioUrl?: string;
   lyrics?: LyricEntry[];
   durationInSeconds?: number;
 }
 
 export const LyricsVideo: React.FC<LyricsVideoComponentProps> = ({
   audioFile,
+  audioUrl,
   lyrics = [],
   durationInSeconds = 0
 }) => {
+  // If we have a File object but no URL, create a URL from the File
+  const [localAudioUrl, setLocalAudioUrl] = useState<string>('');
+  
+  useEffect(() => {
+    // Clean up any old URL
+    if (localAudioUrl) {
+      URL.revokeObjectURL(localAudioUrl);
+    }
+    
+    // Create a URL from the File object if we have one and don't have an explicit audioUrl
+    if (audioFile && !audioUrl) {
+      const url = URL.createObjectURL(audioFile);
+      setLocalAudioUrl(url);
+    } else {
+      setLocalAudioUrl('');
+    }
+    
+    return () => {
+      if (localAudioUrl) {
+        URL.revokeObjectURL(localAudioUrl);
+      }
+    };
+  }, [audioFile, audioUrl]);
+  
+  // Use the provided audioUrl, or the locally created one, or nothing
+  const effectiveAudioUrl = audioUrl || localAudioUrl || '';
+  
   return (
     <div style={{ width: '100%', marginBottom: '20px' }}>
       <Composition
@@ -314,7 +331,7 @@ export const LyricsVideo: React.FC<LyricsVideoComponentProps> = ({
         width={1280}
         height={720}
         defaultProps={{
-          audioFile: audioFile || createSilentAudio(),
+          audioUrl: effectiveAudioUrl,
           lyrics,
           durationInSeconds,
         }}
