@@ -1,22 +1,29 @@
 import React from 'react';
-import { registerRoot, Composition } from 'remotion';
-import { LyricsVideoContent, LyricsVideoProps } from '../components/LyricsVideo';
+import { Composition } from 'remotion';
+import { LyricsComposition } from './Composition';
 
-// This file will be used by Remotion for rendering
-const RemotionRoot: React.FC = () => {
+const sampleLyrics = [
+  { start: 0, end: 2, text: "Welcome to" },
+  { start: 2, end: 4, text: "Lyrics Video Maker" },
+  { start: 4, end: 6, text: "Preview Mode" }
+];
+
+export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition
         id="lyrics-video"
-        component={LyricsVideoContent as unknown as React.FC<Record<string, unknown>>}
-        durationInFrames={1000} // Will be overridden by props
+        component={LyricsComposition as React.FC}
+        durationInFrames={300} // 10 seconds at 30fps
         fps={30}
         width={1280}
         height={720}
-        // Props will be passed via command line
+        defaultProps={{
+          audioUrl: '', // No audio in preview mode
+          lyrics: sampleLyrics,
+          durationInSeconds: 10
+        }}
       />
     </>
   );
 };
-
-registerRoot(RemotionRoot);
