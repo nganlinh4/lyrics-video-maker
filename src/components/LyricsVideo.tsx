@@ -5,7 +5,7 @@ import { LyricEntry, Props } from '../types';
 // Spotify-inspired constants
 const LYRIC_HEIGHT = 65; // Height of each lyric line
 const LYRIC_MARGIN = 24; // Spacing between lines
-const TRANSITION_DURATION = 0.5; // Duration in seconds for lyric transitions
+const TRANSITION_DURATION = 1; // Duration in seconds for lyric transitions
 const BASE_POSITION = 720 / 2 - 30; // Center position (adjusted from height / 2 + CENTER_OFFSET)
 const ALBUM_COVER_SIZE = 300; // Size of the album cover
 const ALBUM_COVER_MARGIN = 40; // Margin from the left edge
@@ -23,31 +23,54 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
   }, [lyrics, currentTimeInSeconds]);
 
   // Calculate scroll offset with smooth transition
-  const scrollOffset = useMemo(() => {
-    if (activeLyricIndex >= 0) {
-      const currentLyric = lyrics[activeLyricIndex];
-      const transitionStart = currentLyric.end - TRANSITION_DURATION;
-      if (currentTimeInSeconds >= transitionStart && activeLyricIndex < lyrics.length - 1) {
+const scrollOffset = useMemo(() => {
+  if (activeLyricIndex >= 0) {
+    const currentLyric = lyrics[activeLyricIndex];
+    const currentOffset = activeLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+    if (activeLyricIndex < lyrics.length - 1) {
+      const nextLyric = lyrics[activeLyricIndex + 1];
+      const nextOffset = (activeLyricIndex + 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+      const transitionCenter = (currentLyric.end + nextLyric.start) / 2;
+      const transitionStart = transitionCenter - TRANSITION_DURATION / 2;
+      const transitionEnd = transitionCenter + TRANSITION_DURATION / 2;
+      if (currentTimeInSeconds >= transitionStart && currentTimeInSeconds <= transitionEnd) {
         const p = (currentTimeInSeconds - transitionStart) / TRANSITION_DURATION;
-        const easedP = Easing.bezier(0.25, 0.1, 0.25, 1)(p); // Ease-in-out for smooth movement
-        const currentOffset = activeLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-        const nextOffset = (activeLyricIndex + 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-        return interpolate(easedP, [0, 1], [currentOffset, nextOffset], { 
-          extrapolateLeft: 'clamp', 
-          extrapolateRight: 'clamp' 
+        const easedP = Easing.bezier(0.25, 0.1, 0.25, 1)(p);
+        return interpolate(easedP, [0, 1], [currentOffset, nextOffset], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
         });
-      } else {
-        return activeLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
       }
-    } else {
-      const nextLyricIndex = lyrics.findIndex(lyric => lyric.start > currentTimeInSeconds);
-      if (nextLyricIndex >= 0) {
-        return nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-      } else {
-        return (lyrics.length - 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-      }
+      return currentOffset;
     }
-  }, [activeLyricIndex, currentTimeInSeconds, lyrics]);
+    return currentOffset;
+  } else {
+    // Find previous and next lyrics during the gap
+    const previousLyricIndex = lyrics.reduce((prev, curr, i) => 
+      curr.end <= currentTimeInSeconds && (prev === -1 || lyrics[prev].end < curr.end) ? i : prev, -1);
+    const nextLyricIndex = lyrics.findIndex(lyric => lyric.start > currentTimeInSeconds);
+    if (previousLyricIndex >= 0 && nextLyricIndex >= 0) {
+      const previousLyric = lyrics[previousLyricIndex];
+      const nextLyric = lyrics[nextLyricIndex];
+      const previousOffset = previousLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+      const nextOffset = nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+      const transitionCenter = (previousLyric.end + nextLyric.start) / 2;
+      const transitionStart = transitionCenter - TRANSITION_DURATION / 2;
+      const transitionEnd = transitionCenter + TRANSITION_DURATION / 2;
+      if (currentTimeInSeconds >= transitionStart && currentTimeInSeconds <= transitionEnd) {
+        const p = (currentTimeInSeconds - transitionStart) / TRANSITION_DURATION;
+        const easedP = Easing.bezier(0.25, 0.1, 0.25, 1)(p);
+        return interpolate(easedP, [0, 1], [previousOffset, nextOffset], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+        });
+      }
+      return currentTimeInSeconds < transitionCenter ? previousOffset : nextOffset;
+    }
+    return nextLyricIndex >= 0 ? nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION : 
+      (lyrics.length - 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+  }
+}, [activeLyricIndex, currentTimeInSeconds, lyrics]);
 
   // Album cover floating animation
   const albumCoverOffset = useMemo(() => {
