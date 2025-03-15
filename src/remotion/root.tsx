@@ -8,7 +8,7 @@ const RemotionRoot: React.FC = () => {
     <>
       <Composition
         id="lyrics-video"
-        component={LyricsVideoContent as React.FC<Record<string, unknown>>}
+        component={LyricsVideoContent as unknown as React.FC<Record<string, unknown>>}
         durationInFrames={1000} // Will be overridden by props
         fps={30}
         width={1280}

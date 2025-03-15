@@ -13,6 +13,11 @@ export interface RenderProgress {
   error?: string;
 }
 
+interface BundleResult {
+  url: string;
+  [key: string]: any;
+}
+
 export class RemotionService {
   private compositionId = 'lyrics-video';
   private fps = 30;
@@ -49,7 +54,7 @@ export class RemotionService {
 
       // Bundle the remotion project
       console.log('Bundling Remotion project...');
-      const bundled = await bundle(entry);
+      const bundled = await bundle(entry) as unknown as BundleResult;
 
       // Select the composition to render
       console.log('Selecting composition...');

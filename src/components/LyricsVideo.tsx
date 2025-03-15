@@ -86,7 +86,7 @@ const LyricsVideo: React.FC<LyricsVideoComponentProps> = ({
     <div style={{ width: '100%', marginBottom: '20px' }}>
       <Composition
         id="lyrics-video"
-        component={LyricsVideoContent as React.FC<Record<string, unknown>>}
+        component={LyricsVideoContent as unknown as React.FC<Record<string, unknown>>}
         durationInFrames={Math.max(30, durationInSeconds * 30)} // At least 1 second, 30 fps
         fps={30}
         width={1280}
