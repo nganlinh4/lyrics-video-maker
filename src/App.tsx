@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import { Player } from '@remotion/player';
 import AudioUpload from './components/AudioUpload';
 import LyricsUpload from './components/LyricsUpload';
 import { LyricsVideo, LyricsVideoContent } from './components/LyricsVideo';
 import VideoPreview from './components/VideoPreview';
 import { RenderControl } from './components/RenderControl';
 import { LyricEntry } from './types';
-import styled from 'styled-components';
-import { Player } from '@remotion/player';
 
 const Container = styled.div`
   display: flex;
@@ -22,6 +22,7 @@ const Title = styled.h1`
   color: #333;
   margin-bottom: 20px;
   font-size: 2.5rem;
+  text-align: center;
 `;
 
 const Card = styled.div`
@@ -54,12 +55,14 @@ const App: React.FC = () => {
   const [videoPath, setVideoPath] = useState<string>('');
   const [audioUrl, setAudioUrl] = useState<string>('');
   const [durationInSeconds, setDurationInSeconds] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
 
   const handleAudioUpload = (file: File | null) => {
     setAudioFile(file);
     if (file) {
       const url = URL.createObjectURL(file);
       setAudioUrl(url);
+      setError(null);
     } else {
       setAudioUrl('');
     }
@@ -71,6 +74,7 @@ const App: React.FC = () => {
       // Calculate duration based on the end time of the last lyric + 2 seconds
       const lastLyricEnd = Math.max(...lyricsData.map(lyric => lyric.end));
       setDurationInSeconds(lastLyricEnd + 2);
+      setError(null);
     } else {
       setDurationInSeconds(0);
     }
@@ -89,6 +93,9 @@ const App: React.FC = () => {
     };
   }, [audioUrl]);
 
+  // Calculate whether to show preview and render controls
+  const canShowPreview = audioFile && lyrics && durationInSeconds > 0;
+
   return (
     <Container>
       <Title>Lyrics Video Maker</Title>
@@ -103,7 +110,11 @@ const App: React.FC = () => {
         <LyricsUpload onLyricsUpload={handleLyricsUpload} />
       </Card>
       
-      {audioFile && lyrics && durationInSeconds > 0 && (
+      {error && (
+        <StatusText error>{error}</StatusText>
+      )}
+      
+      {canShowPreview && (
         <Card>
           <h2>Step 3: Preview</h2>
           <PreviewContainer>
@@ -124,7 +135,7 @@ const App: React.FC = () => {
         </Card>
       )}
       
-      {audioFile && lyrics && (
+      {canShowPreview && (
         <Card>
           <h2>Step 4: Render Video</h2>
           <RenderControl 

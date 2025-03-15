@@ -28,7 +28,7 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioFile, lyrics, duratio
         justifyContent: 'center' 
       }}
     >
-      {audioUrl && audioFile && audioFile.size > 0 && <Audio src={audioUrl} />}
+      {audioUrl && <Audio src={audioUrl} />}
       <div style={{ width: '80%', textAlign: 'center' }}>
         {lyrics?.map((lyric: LyricEntry, index: number) => {
           const fadeDuration = 0.2;
