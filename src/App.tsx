@@ -95,6 +95,9 @@ const App: React.FC = () => {
 
   // Calculate whether to show preview and render controls
   const canShowPreview = audioFile && lyrics && durationInSeconds > 0;
+  
+  // Calculate duration in frames, ensuring it's an integer
+  const durationInFrames = Math.round(Math.max(30, durationInSeconds * 30));
 
   return (
     <Container>
@@ -120,7 +123,7 @@ const App: React.FC = () => {
           <PreviewContainer>
             <Player
               component={LyricsVideoContent}
-              durationInFrames={Math.max(30, durationInSeconds * 30)}
+              durationInFrames={durationInFrames} // Use the rounded value here
               compositionWidth={1280}
               compositionHeight={720}
               fps={30}
