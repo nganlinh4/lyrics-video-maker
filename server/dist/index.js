@@ -53,6 +53,8 @@ app.post('/render', async (req, res) => {
         }
         const compositionId = 'lyrics-video';
         const fps = 30;
+        // Calculate the exact number of frames based on the lyrics duration
+        const durationInFrames = Math.max(30, Math.ceil(durationInSeconds * fps));
         const outputFile = `lyrics-video-${Date.now()}.mp4`;
         const outputPath = path_1.default.join(outputDir, outputFile);
         // Create a URL that can be accessed via HTTP instead of file:// protocol
@@ -69,10 +71,11 @@ app.post('/render', async (req, res) => {
         // Select the composition
         console.log('Selecting composition...');
         console.log('Using serve URL:', bundleResult);
+        console.log('Video duration:', `${durationInSeconds} seconds (${durationInFrames} frames at ${fps}fps)`);
         // Get available compositions (for debugging)
         const compositions = await (0, renderer_1.getCompositions)(bundleResult, {
             inputProps: {
-                audioUrl: audioUrl, // Use HTTP URL instead of file:// protocol
+                audioUrl: audioUrl,
                 lyrics,
                 durationInSeconds
             }
@@ -82,20 +85,23 @@ app.post('/render', async (req, res) => {
             serveUrl: bundleResult,
             id: compositionId,
             inputProps: {
-                audioUrl: audioUrl, // Use HTTP URL instead of file:// protocol
+                audioUrl: audioUrl,
                 lyrics,
                 durationInSeconds
             },
         });
+        // Force the composition duration to match our calculated duration
+        composition.durationInFrames = durationInFrames;
         // Render the video
         console.log('Starting rendering process...');
+        console.log('Using composition duration:', composition.durationInFrames, 'frames');
         await (0, renderer_1.renderMedia)({
             composition,
             serveUrl: bundleResult,
             codec: 'h264',
             outputLocation: outputPath,
             inputProps: {
-                audioUrl: audioUrl, // Use HTTP URL instead of file:// protocol
+                audioUrl: audioUrl,
                 lyrics,
                 durationInSeconds
             },
