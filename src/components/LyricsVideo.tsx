@@ -5,7 +5,7 @@ import { LyricEntry, Props } from '../types';
 // Spotify-inspired constants
 const LYRIC_HEIGHT = 65; // Height of each lyric line
 const LYRIC_MARGIN = 24; // Spacing between lines
-const TRANSITION_DURATION = 1; // Duration in seconds for lyric transitions
+const TRANSITION_DURATION = 0.5; // Duration in seconds for lyric transitions
 const BASE_POSITION = 720 / 2 - 30; // Center position (adjusted from height / 2 + CENTER_OFFSET)
 const ALBUM_COVER_SIZE = 300; // Size of the album cover
 const ALBUM_COVER_MARGIN = 40; // Margin from the left edge
@@ -15,8 +15,7 @@ const INACTIVE_FONT_SIZE = 36;
 const ACTIVE_FONT_SIZE = 40;
 const INACTIVE_COLOR = [255, 255, 255];
 const ACTIVE_COLOR = [30, 215, 96];
-const INACTIVE_FONT_WEIGHT = 400;
-const ACTIVE_FONT_WEIGHT = 700;
+// Removed INACTIVE_FONT_WEIGHT and ACTIVE_FONT_WEIGHT
 
 // Function to interpolate RGB colors
 const interpolateColor = (progress: number, from: number[], to: number[]) => {
@@ -24,6 +23,51 @@ const interpolateColor = (progress: number, from: number[], to: number[]) => {
   const g = interpolate(progress, [0, 1], [from[1], to[1]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const b = interpolate(progress, [0, 1], [from[2], to[2]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+};
+
+export const LyricsComponent: React.FC<{ lyrics: LyricEntry[] }> = ({ lyrics }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const currentTimeInSeconds = frame / fps;
+
+  return (
+    <div>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;1,400&display=swap"
+        rel="stylesheet"
+      />
+      {lyrics.map((lyric, index) => {
+        const TRANSITION_DURATION = 0.5;
+        let progress = 0;
+
+        if (currentTimeInSeconds < lyric.start - TRANSITION_DURATION) {
+          progress = 0;
+        } else if (currentTimeInSeconds <= lyric.start) {
+          progress = (currentTimeInSeconds - (lyric.start - TRANSITION_DURATION)) / TRANSITION_DURATION;
+        } else if (currentTimeInSeconds < lyric.end) {
+          progress = 1;
+        } else if (currentTimeInSeconds <= lyric.end + TRANSITION_DURATION) {
+          progress = 1 - (currentTimeInSeconds - lyric.end) / TRANSITION_DURATION;
+        }
+
+        return (
+          <div
+            key={index}
+            style={{
+              fontFamily: 'Montserrat',
+              fontWeight: 400, // Keep constant font weight
+              maxWidth: '800px', // Add this to limit line width
+              margin: '0 auto', // Center the text if it's shorter than maxWidth
+              whiteSpace: 'pre-wrap', // Handle line breaks properly
+              wordWrap: 'break-word', // Break long words if necessary
+            }}
+          >
+            {lyric.text}
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, durationInSeconds }) => {
@@ -187,7 +231,8 @@ const scrollOffset = useMemo(() => {
       {/* Lyrics Container */}
       <div
         style={{
-          width: '85%',
+          width: '85%',  // You can adjust this percentage
+          maxWidth: '900px', // Add this to set a maximum width
           textAlign: 'center',
           height: '100%',
           position: 'relative',
@@ -216,7 +261,7 @@ const scrollOffset = useMemo(() => {
           });
 
           const color = interpolateColor(progress, INACTIVE_COLOR, ACTIVE_COLOR);
-          const fontWeight = progress > 0.5 ? ACTIVE_FONT_WEIGHT : INACTIVE_FONT_WEIGHT;
+          // Removed fontWeight calculation
 
           return (
             <div
@@ -230,10 +275,10 @@ const scrollOffset = useMemo(() => {
                 transform: `translate(-50%, ${position}px) scale(${scale})`,
                 fontSize: `${fontSize}px`,
                 fontFamily: "'Montserrat', 'Circular', -apple-system, BlinkMacSystemFont, sans-serif",
-                fontWeight,
+                fontWeight: 400, // Keep constant font weight
                 textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                 whiteSpace: 'pre-wrap',
-                letterSpacing: progress > 0.5 ? '0.2px' : '0',
+                letterSpacing: '0',
                 userSelect: 'none',
                 zIndex: 100 - Math.abs(activeLyricIndex - index),
                 display: 'flex',
