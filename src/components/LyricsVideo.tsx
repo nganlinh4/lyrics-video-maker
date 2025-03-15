@@ -9,6 +9,10 @@ const SCROLL_SPEED = 10; // Smoother, more gentle scrolling
 const LINE_TRANSITION = 0.3; // Duration of transition effects in seconds
 const CENTER_OFFSET = -30; // Move center position slightly up for better visual balance
 
+// Add album cover constants
+const ALBUM_COVER_SIZE = 300; // Size of the album cover
+const ALBUM_COVER_MARGIN = 40; // Margin from the left edge
+
 export const LyricsVideoContent: React.FC<Props> = ({ audioFile, lyrics, durationInSeconds }) => {
   const frame = useCurrentFrame();
   const { fps, height, width } = useVideoConfig();
@@ -146,22 +150,64 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioFile, lyrics, duratio
         }}
       />
       
-      {/* Subtle grid texture overlay */}
+      {/* Album Cover */}
       <div
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px), 
-                           linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)`,
-          backgroundSize: '20px 20px',
-          opacity: 0.3,
+          left: ALBUM_COVER_MARGIN,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: ALBUM_COVER_SIZE,
+          height: ALBUM_COVER_SIZE,
+          backgroundColor: 'rgba(30, 30, 30, 0.6)',
+          borderRadius: '8px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          // Add subtle floating animation
+          animation: `float ${4}s ease-in-out infinite`,
         }}
-      />
-      
-      <div style={{ width: '85%', textAlign: 'center', height: '100%', position: 'relative' }}>
+      >
+        {/* Placeholder Album Art Pattern */}
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            background: `linear-gradient(45deg, 
+              rgba(40, 40, 40, 0.6) 25%, 
+              rgba(60, 60, 60, 0.6) 25%, 
+              rgba(60, 60, 60, 0.6) 50%, 
+              rgba(40, 40, 40, 0.6) 50%, 
+              rgba(40, 40, 40, 0.6) 75%, 
+              rgba(60, 60, 60, 0.6) 75%, 
+              rgba(60, 60, 60, 0.6))`,
+            backgroundSize: '40px 40px',
+            opacity: 0.8,
+          }}
+        />
+        
+        {/* Music Note Icon */}
+        <div
+          style={{
+            position: 'absolute',
+            fontSize: '80px',
+            color: 'rgba(255, 255, 255, 0.3)',
+          }}
+        >
+          ♪
+        </div>
+      </div>
+
+      {/* Adjust the lyrics container to make space for album cover */}
+      <div style={{ 
+        width: '85%', 
+        textAlign: 'center', 
+        height: '100%', 
+        position: 'relative',
+        marginLeft: ALBUM_COVER_SIZE + (ALBUM_COVER_MARGIN * 2), // Add margin to make space for album cover
+      }}>
         {lyrics?.map((lyric: LyricEntry, index: number) => {
           const isActive = index === activeLyricIndex;
           const position = calculatePosition(index);
