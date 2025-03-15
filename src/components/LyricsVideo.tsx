@@ -167,7 +167,6 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioFile, lyrics, duratio
           const position = calculatePosition(index);
           const scale = getTextScale(index);
           const opacity = getOpacity(index);
-          const progress = isActive ? getActiveProgress(lyric) : 0;
 
           return (
             <div
@@ -193,7 +192,6 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioFile, lyrics, duratio
                 alignItems: 'center',
               }}
             >
-              {/* The text container */}
               <div
                 style={{
                   position: 'relative',
@@ -204,50 +202,15 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioFile, lyrics, duratio
                   overflow: 'hidden',
                 }}
               >
-                {/* Active lyric highlight effect */}
-                {isActive && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      height: '100%',
-                      width: `${progress * 100}%`,
-                      background: 'linear-gradient(90deg, rgba(30, 215, 96, 0.2) 0%, rgba(30, 215, 96, 0.05) 100%)',
-                      transition: 'width 0.1s linear',
-                      borderRadius: '4px',
-                      zIndex: -1,
-                    }}
-                  />
-                )}
-                
-                {/* Two-color text effect for active lyrics */}
-                {isActive ? (
-                  <div style={{ position: 'relative' }}>
-                    {/* Background text (white) */}
-                    <span style={{ color: '#fff' }}>{lyric.text}</span>
-                    
-                    {/* Foreground text (green highlight) with clipping */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: `${progress * 100}%`,
-                        overflow: 'hidden',
-                        whiteSpace: 'pre-wrap',
-                        color: '#1ED760', // Spotify green
-                      }}
-                    >
-                      {lyric.text}
-                    </div>
-                  </div>
-                ) : (
-                  // Inactive lyrics are just white/gray text
-                  <span style={{ color: index === activeLyricIndex - 1 || index === activeLyricIndex + 1 ? '#e6e6e6' : '#b3b3b3' }}>
-                    {lyric.text}
-                  </span>
-                )}
+                <span 
+                  style={{ 
+                    color: isActive ? '#1ED760' : 
+                           (index === activeLyricIndex - 1 || index === activeLyricIndex + 1) ? 
+                           '#e6e6e6' : '#b3b3b3' 
+                  }}
+                >
+                  {lyric.text}
+                </span>
               </div>
             </div>
           );
