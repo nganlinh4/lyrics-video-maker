@@ -1,6 +1,6 @@
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
-import { LyricEntry } from '../components/LyricsVideo';
+import { LyricEntry } from '../types';
 
 // We'll use a string for the entry point since we can't use Node.js path module in browser
 const entry = 'src/remotion/root.tsx';

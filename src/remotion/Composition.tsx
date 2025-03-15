@@ -19,14 +19,26 @@ export const LyricsComposition: React.FC<Props> = ({ audioUrl, lyrics, durationI
   const currentTimeInSeconds = frame / fps;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {audioUrl && <Audio src={audioUrl} />}
+    <AbsoluteFill 
+      style={{ 
+        backgroundColor: 'black', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}
+    >
+      <Audio src={audioUrl} />
       <div style={{ width: '80%', textAlign: 'center' }}>
         {lyrics.map((lyric, index) => {
           const fadeDuration = 0.2;
           const opacity = interpolate(
             currentTimeInSeconds,
-            [lyric.start - fadeDuration, lyric.start, lyric.end, lyric.end + fadeDuration],
+            [
+              lyric.start - fadeDuration,
+              lyric.start,
+              lyric.end,
+              lyric.end + fadeDuration
+            ],
             [0, 1, 1, 0],
             {
               extrapolateLeft: 'clamp',
@@ -34,45 +46,27 @@ export const LyricsComposition: React.FC<Props> = ({ audioUrl, lyrics, durationI
             }
           );
 
-          const scale = interpolate(
-            currentTimeInSeconds,
-            [lyric.start - fadeDuration, lyric.start, lyric.end, lyric.end + fadeDuration],
-            [0.8, 1, 1, 0.8],
-            {
-              extrapolateLeft: 'clamp',
-              extrapolateRight: 'clamp',
-            }
-          );
-
           return (
-            <div 
-              key={index} 
+            <div
+              key={index}
               style={{
-                fontSize: 50,
-                fontWeight: 'bold',
-                color: 'white',
                 opacity,
-                transform: `scale(${scale})`,
-                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
+                fontSize: '48px',
+                color: 'white',
+                fontFamily: 'Arial, sans-serif',
+                fontWeight: 'bold',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
                 position: 'absolute',
                 width: '100%',
-                display: opacity > 0.01 ? 'block' : 'none',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
               }}
             >
               {lyric.text}
             </div>
           );
         })}
-        {lyrics.length === 0 && (
-          <div style={{
-            fontSize: 50,
-            fontWeight: 'bold',
-            color: 'white',
-            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
-          }}>
-            Lyrics Video Preview
-          </div>
-        )}
       </div>
     </AbsoluteFill>
   );

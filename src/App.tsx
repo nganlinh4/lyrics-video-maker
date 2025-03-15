@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import AudioUpload from './components/AudioUpload';
 import LyricsUpload from './components/LyricsUpload';
-import LyricsVideo from './components/LyricsVideo';
+import { LyricsVideo, LyricsVideoContent } from './components/LyricsVideo';
 import VideoPreview from './components/VideoPreview';
-import RenderControl from './components/RenderControl';
+import { RenderControl } from './components/RenderControl';
+import { LyricEntry } from './types';
 import styled from 'styled-components';
 import { Player } from '@remotion/player';
-import { LyricEntry, LyricsVideoContent } from './components/LyricsVideo';
 
 const Container = styled.div`
   display: flex;
@@ -115,7 +115,7 @@ const App: React.FC = () => {
               fps={30}
               controls
               inputProps={{
-                audioUrl,
+                audioFile,
                 lyrics,
                 durationInSeconds
               }}
@@ -130,6 +130,7 @@ const App: React.FC = () => {
           <RenderControl 
             audioFile={audioFile} 
             lyrics={lyrics} 
+            durationInSeconds={durationInSeconds}
             onRenderComplete={handleRenderComplete} 
           />
         </Card>
