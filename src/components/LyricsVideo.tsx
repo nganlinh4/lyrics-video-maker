@@ -10,6 +10,22 @@ const BASE_POSITION = 720 / 2 - 30; // Center position (adjusted from height / 2
 const ALBUM_COVER_SIZE = 300; // Size of the album cover
 const ALBUM_COVER_MARGIN = 40; // Margin from the left edge
 
+// New styling constants
+const INACTIVE_FONT_SIZE = 36;
+const ACTIVE_FONT_SIZE = 40;
+const INACTIVE_COLOR = [255, 255, 255];
+const ACTIVE_COLOR = [30, 215, 96];
+const INACTIVE_FONT_WEIGHT = 400;
+const ACTIVE_FONT_WEIGHT = 700;
+
+// Function to interpolate RGB colors
+const interpolateColor = (progress: number, from: number[], to: number[]) => {
+  const r = interpolate(progress, [0, 1], [from[0], to[0]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const g = interpolate(progress, [0, 1], [from[1], to[1]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const b = interpolate(progress, [0, 1], [from[2], to[2]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+};
+
 export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, durationInSeconds }) => {
   const frame = useCurrentFrame();
   const { fps, height, width } = useVideoConfig();
@@ -81,6 +97,20 @@ const scrollOffset = useMemo(() => {
   const backgroundPulse = useMemo(() => {
     return interpolate(Math.sin(frame / fps * 2 * Math.PI), [-1, 1], [0.03, 0.06]);
   }, [frame, fps]);
+
+  // Calculate transition progress for each lyric
+  const getLyricProgress = (lyric: LyricEntry, currentTime: number) => {
+    if (currentTime < lyric.start - TRANSITION_DURATION) {
+      return 0;
+    } else if (currentTime >= lyric.start - TRANSITION_DURATION && currentTime <= lyric.start) {
+      return (currentTime - (lyric.start - TRANSITION_DURATION)) / TRANSITION_DURATION;
+    } else if (currentTime > lyric.start && currentTime < lyric.end) {
+      return 1;
+    } else if (currentTime >= lyric.end && currentTime <= lyric.end + TRANSITION_DURATION) {
+      return 1 - (currentTime - lyric.end) / TRANSITION_DURATION;
+    }
+    return 0;
+  };
 
   return (
     <AbsoluteFill
@@ -165,18 +195,28 @@ const scrollOffset = useMemo(() => {
         }}
       >
         {lyrics?.map((lyric: LyricEntry, index: number) => {
+          const progress = getLyricProgress(lyric, currentTimeInSeconds);
           const naturalPosition = index * (LYRIC_HEIGHT + LYRIC_MARGIN);
           const position = naturalPosition - scrollOffset;
           const distance = Math.abs(position - BASE_POSITION);
-          const scale = interpolate(distance, [0, 150], [1.08, 0.92], { 
-            extrapolateLeft: 'clamp', 
-            extrapolateRight: 'clamp' 
+          
+          const scale = interpolate(distance, [0, 150], [1.08, 0.92], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp'
           });
-          const opacity = interpolate(distance, [0, 200], [1, 0.3], { 
-            extrapolateLeft: 'clamp', 
-            extrapolateRight: 'clamp' 
+          
+          const opacity = interpolate(distance, [0, 200], [1, 0.3], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp'
           });
-          const isActive = index === activeLyricIndex;
+
+          const fontSize = interpolate(progress, [0, 1], [INACTIVE_FONT_SIZE, ACTIVE_FONT_SIZE], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+          });
+
+          const color = interpolateColor(progress, INACTIVE_COLOR, ACTIVE_COLOR);
+          const fontWeight = progress > 0.5 ? ACTIVE_FONT_WEIGHT : INACTIVE_FONT_WEIGHT;
 
           return (
             <div
@@ -188,12 +228,12 @@ const scrollOffset = useMemo(() => {
                 top: 0,
                 opacity,
                 transform: `translate(-50%, ${position}px) scale(${scale})`,
-                fontSize: '36px',
+                fontSize: `${fontSize}px`,
                 fontFamily: "'Montserrat', 'Circular', -apple-system, BlinkMacSystemFont, sans-serif",
-                fontWeight: isActive ? 700 : 400,
+                fontWeight,
                 textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                 whiteSpace: 'pre-wrap',
-                letterSpacing: isActive ? '0.2px' : '0',
+                letterSpacing: progress > 0.5 ? '0.2px' : '0',
                 userSelect: 'none',
                 zIndex: 100 - Math.abs(activeLyricIndex - index),
                 display: 'flex',
@@ -211,13 +251,7 @@ const scrollOffset = useMemo(() => {
                   overflow: 'hidden',
                 }}
               >
-                <span
-                  style={{
-                    color: isActive ? '#1ED760' : index === activeLyricIndex - 1 || index === activeLyricIndex + 1 ? '#e6e6e6' : '#b3b3b3',
-                  }}
-                >
-                  {lyric.text}
-                </span>
+                <span style={{ color }}>{lyric.text}</span>
               </div>
             </div>
           );
