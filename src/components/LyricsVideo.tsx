@@ -112,12 +112,12 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
 
   // Audio reactivity effect
   const audioReactiveEffect = useMemo(() => {
-    return Math.abs(Math.sin(frame / (fps * 0.25)) * 0.5) + 0.5;
+    return Math.abs(Math.sin(frame / (fps * 0.8)) * 0.5) + 0.5;
   }, [frame, fps]);
 
   // Parallax effect
   const parallaxOffset = useMemo(() => {
-    return Math.sin(frame / fps * 0.5) * 10;
+    return Math.sin(frame / fps * 0.2) * 10;
   }, [frame, fps]);
 
   // Find the active lyric index
