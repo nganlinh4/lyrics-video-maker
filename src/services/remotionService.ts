@@ -10,6 +10,12 @@ export interface RenderProgress {
   error?: string;
 }
 
+export interface RenderOptions {
+  albumArtUrl?: string;
+  backgroundImageUrl?: string;
+}
+
+
 export class RemotionService {
   private compositionId = 'lyrics-video';
   private fps = 30;
@@ -18,6 +24,7 @@ export class RemotionService {
     audioFile: File,
     lyrics: LyricEntry[],
     durationInSeconds: number,
+    options: RenderOptions = {},
     onProgress?: (progress: RenderProgress) => void
   ): Promise<string> {
     try {
@@ -54,6 +61,8 @@ export class RemotionService {
           audioFile: filename,
           lyrics,
           durationInSeconds,
+          albumArtUrl: options.albumArtUrl,
+          backgroundImageUrl: options.backgroundImageUrl,
         }),
       });
 

@@ -63,6 +63,8 @@ interface Props {
   audioFile: File | null;
   lyrics: LyricEntry[] | null;
   durationInSeconds: number;
+  albumArtFile: File | null;
+  backgroundFile: File | null;
   onRenderComplete: (videoPath: string) => void;
 }
 
@@ -70,6 +72,8 @@ export const RenderControl: React.FC<Props> = ({
   audioFile,
   lyrics,
   durationInSeconds,
+  albumArtFile,
+  backgroundFile,
   onRenderComplete
 }) => {
   const [isRendering, setIsRendering] = useState(false);
@@ -96,6 +100,10 @@ export const RenderControl: React.FC<Props> = ({
         audioFile,
         lyrics,
         durationInSeconds, // Pass the actual audio duration
+        {
+          albumArtUrl: albumArtFile ? URL.createObjectURL(albumArtFile) : undefined,
+          backgroundImageUrl: backgroundFile ? URL.createObjectURL(backgroundFile) : undefined
+        },
         (progress) => {
           if (progress.status === 'error') {
             setError(progress.error || 'An error occurred during rendering');

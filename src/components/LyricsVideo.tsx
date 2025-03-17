@@ -70,7 +70,7 @@ export const LyricsComponent: React.FC<{ lyrics: LyricEntry[] }> = ({ lyrics }) 
   );
 };
 
-export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, durationInSeconds }) => {
+export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl }) => {
   const frame = useCurrentFrame();
   const { fps, height, width } = useVideoConfig();
   const currentTimeInSeconds = frame / fps;
@@ -83,54 +83,54 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
   }, [lyrics, currentTimeInSeconds]);
 
   // Calculate scroll offset with smooth transition
-const scrollOffset = useMemo(() => {
-  if (activeLyricIndex >= 0) {
-    const currentLyric = lyrics[activeLyricIndex];
-    const currentOffset = activeLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-    if (activeLyricIndex < lyrics.length - 1) {
-      const nextLyric = lyrics[activeLyricIndex + 1];
-      const nextOffset = (activeLyricIndex + 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-      const transitionCenter = (currentLyric.end + nextLyric.start) / 2;
-      const transitionStart = transitionCenter - TRANSITION_DURATION / 2;
-      const transitionEnd = transitionCenter + TRANSITION_DURATION / 2;
-      if (currentTimeInSeconds >= transitionStart && currentTimeInSeconds <= transitionEnd) {
-        const p = (currentTimeInSeconds - transitionStart) / TRANSITION_DURATION;
-        const easedP = Easing.bezier(0.25, 0.1, 0.25, 1)(p);
-        return interpolate(easedP, [0, 1], [currentOffset, nextOffset], {
-          extrapolateLeft: 'clamp',
-          extrapolateRight: 'clamp',
-        });
+  const scrollOffset = useMemo(() => {
+    if (activeLyricIndex >= 0) {
+      const currentLyric = lyrics[activeLyricIndex];
+      const currentOffset = activeLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+      if (activeLyricIndex < lyrics.length - 1) {
+        const nextLyric = lyrics[activeLyricIndex + 1];
+        const nextOffset = (activeLyricIndex + 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+        const transitionCenter = (currentLyric.end + nextLyric.start) / 2;
+        const transitionStart = transitionCenter - TRANSITION_DURATION / 2;
+        const transitionEnd = transitionCenter + TRANSITION_DURATION / 2;
+        if (currentTimeInSeconds >= transitionStart && currentTimeInSeconds <= transitionEnd) {
+          const p = (currentTimeInSeconds - transitionStart) / TRANSITION_DURATION;
+          const easedP = Easing.bezier(0.25, 0.1, 0.25, 1)(p);
+          return interpolate(easedP, [0, 1], [currentOffset, nextOffset], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+          });
+        }
+        return currentOffset;
       }
       return currentOffset;
-    }
-    return currentOffset;
-  } else {
-    // Find previous and next lyrics during the gap
-    const previousLyricIndex = lyrics.reduce((prev, curr, i) => 
-      curr.end <= currentTimeInSeconds && (prev === -1 || lyrics[prev].end < curr.end) ? i : prev, -1);
-    const nextLyricIndex = lyrics.findIndex(lyric => lyric.start > currentTimeInSeconds);
-    if (previousLyricIndex >= 0 && nextLyricIndex >= 0) {
-      const previousLyric = lyrics[previousLyricIndex];
-      const nextLyric = lyrics[nextLyricIndex];
-      const previousOffset = previousLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-      const nextOffset = nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-      const transitionCenter = (previousLyric.end + nextLyric.start) / 2;
-      const transitionStart = transitionCenter - TRANSITION_DURATION / 2;
-      const transitionEnd = transitionCenter + TRANSITION_DURATION / 2;
-      if (currentTimeInSeconds >= transitionStart && currentTimeInSeconds <= transitionEnd) {
-        const p = (currentTimeInSeconds - transitionStart) / TRANSITION_DURATION;
-        const easedP = Easing.bezier(0.25, 0.1, 0.25, 1)(p);
-        return interpolate(easedP, [0, 1], [previousOffset, nextOffset], {
-          extrapolateLeft: 'clamp',
-          extrapolateRight: 'clamp',
-        });
+    } else {
+      // Find previous and next lyrics during the gap
+      const previousLyricIndex = lyrics.reduce((prev, curr, i) => 
+        curr.end <= currentTimeInSeconds && (prev === -1 || lyrics[prev].end < curr.end) ? i : prev, -1);
+      const nextLyricIndex = lyrics.findIndex(lyric => lyric.start > currentTimeInSeconds);
+      if (previousLyricIndex >= 0 && nextLyricIndex >= 0) {
+        const previousLyric = lyrics[previousLyricIndex];
+        const nextLyric = lyrics[nextLyricIndex];
+        const previousOffset = previousLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+        const nextOffset = nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+        const transitionCenter = (previousLyric.end + nextLyric.start) / 2;
+        const transitionStart = transitionCenter - TRANSITION_DURATION / 2;
+        const transitionEnd = transitionCenter + TRANSITION_DURATION / 2;
+        if (currentTimeInSeconds >= transitionStart && currentTimeInSeconds <= transitionEnd) {
+          const p = (currentTimeInSeconds - transitionStart) / TRANSITION_DURATION;
+          const easedP = Easing.bezier(0.25, 0.1, 0.25, 1)(p);
+          return interpolate(easedP, [0, 1], [previousOffset, nextOffset], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+          });
+        }
+        return currentTimeInSeconds < transitionCenter ? previousOffset : nextOffset;
       }
-      return currentTimeInSeconds < transitionCenter ? previousOffset : nextOffset;
+      return nextLyricIndex >= 0 ? nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION : 
+        (lyrics.length - 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
     }
-    return nextLyricIndex >= 0 ? nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION : 
-      (lyrics.length - 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-  }
-}, [activeLyricIndex, currentTimeInSeconds, lyrics]);
+  }, [activeLyricIndex, currentTimeInSeconds, lyrics]);
 
   // Album cover floating animation
   const albumCoverOffset = useMemo(() => {
@@ -159,7 +159,13 @@ const scrollOffset = useMemo(() => {
   return (
     <AbsoluteFill
       style={{
-        background: 'linear-gradient(180deg, #121212 0%, #060606 100%)',
+        background: backgroundImageUrl 
+          ? `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url(${backgroundImageUrl})` 
+          : 'linear-gradient(180deg, #121212 0%, #060606 100%)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundColor: '#000',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -202,30 +208,36 @@ const scrollOffset = useMemo(() => {
           overflow: 'hidden',
         }}
       >
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            background: `linear-gradient(45deg, 
-              rgba(40, 40, 40, 0.6) 25%, 
-              rgba(60, 60, 60, 0.6) 25%, 
-              rgba(60, 60, 60, 0.6) 50%, 
-              rgba(40, 40, 40, 0.6) 50%, 
-              rgba(40, 40, 40, 0.6) 75%, 
-              rgba(60, 60, 60, 0.6) 75%)`,
-            backgroundSize: '40px 40px',
-            opacity: 0.8,
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            fontSize: '80px',
-            color: 'rgba(255, 255, 255, 0.3)',
-          }}
-        >
-          ♪
-        </div>
+        {albumArtUrl ? (
+          <img
+            src={albumArtUrl}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: '8px',
+            }}
+            alt="Album Art"
+          />
+        ) : (
+          <>
+            <div style={{
+                width: '100%',
+                height: '100%',
+                background: `linear-gradient(45deg, 
+                  rgba(40, 40, 40, 0.6) 25%, 
+                  rgba(60, 60, 60, 0.6) 25%, 
+                  rgba(60, 60, 60, 0.6) 50%, 
+                  rgba(40, 40, 40, 0.6) 50%, 
+                  rgba(40, 40, 40, 0.6) 75%, 
+                  rgba(60, 60, 60, 0.6) 75%)`,
+                backgroundSize: '40px 40px',
+                opacity: 0.8,
+              }}
+             />
+            <div style={{position: 'absolute', fontSize: '80px', color: 'rgba(255, 255, 255, 0.3)'}}>♪</div>
+          </>
+        )}
       </div>
 
       {/* Lyrics Container */}

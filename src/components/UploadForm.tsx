@@ -27,11 +27,35 @@ const InputLabel = styled.label`
 `;
 
 const FileInput = styled.input`
+  display: none;
+`;
+
+const DropZone = styled.div<{ isDragging?: boolean }>`
   width: 100%;
-  padding: 0.5rem;
+  padding: 2rem;
   margin: 0.5rem 0;
-  border: 1px solid #ddd;
+  border: 2px dashed ${props => props.isDragging ? '#6e8efb' : '#ddd'};
   border-radius: 4px;
+  background-color: ${props => props.isDragging ? 'rgba(110, 142, 251, 0.1)' : 'transparent'};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #6e8efb;
+    background-color: rgba(110, 142, 251, 0.1);
+  }
+`;
+
+const PreviewImage = styled.img`
+  max-width: 100px;
+  max-height: 100px;
+  margin-top: 1rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const Button = styled.button`
@@ -128,33 +152,56 @@ const CodeExample = styled.pre`
 `;
 
 const FileName = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  background-color: #f5f5f5;
+  border-radius: 4px;
   font-size: 0.9rem;
   color: #555;
-  margin-top: 0.5rem;
 `;
 
-const UploadForm: React.FC = () => {
+const DropText = styled.p`
+  margin: 0;
+  text-align: center;
+  color: #666;
+`;
+
+interface UploadFormProps {
+  onFilesChange: (audioFile: File | null, lyrics: LyricEntry[] | null, albumArt: File | null, background: File | null) => void;
+  onVideoPathChange: (path: string) => void;
+}
+
+const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChange }) => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [lyricsFile, setLyricsFile] = useState<File | null>(null);
+  const [albumArtFile, setAlbumArtFile] = useState<File | null>(null);
+  const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
   const [lyrics, setLyrics] = useState<LyricEntry[] | null>(null);
   const [isRendering, setIsRendering] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [videoPath, setVideoPath] = useState<string>('');
+  const [isDragging, setIsDragging] = useState<{[key: string]: boolean}>({});
+  const [videoPath, setVideoPath] = useState<string | null>(null);
+  
   const audioInputRef = useRef<HTMLInputElement>(null);
   const lyricsInputRef = useRef<HTMLInputElement>(null);
+  const albumArtInputRef = useRef<HTMLInputElement>(null);
+  const backgroundInputRef = useRef<HTMLInputElement>(null);
 
   const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Check if it's an audio file
       if (!file.type.startsWith('audio/')) {
         setError('Please upload a valid audio file (MP3, WAV, etc.)');
         return;
       }
       setAudioFile(file);
       setError(null);
+      onFilesChange(file, lyrics, albumArtFile, backgroundFile);
     }
   };
 
@@ -164,16 +211,13 @@ const UploadForm: React.FC = () => {
       setLyricsFile(file);
       
       try {
-        // Read and parse the JSON file
         const text = await file.text();
         const parsedLyrics = JSON.parse(text);
         
-        // Validate the lyrics format
         if (!Array.isArray(parsedLyrics)) {
           throw new Error('Lyrics file must contain a JSON array');
         }
         
-        // Check if each lyric entry has the required properties
         const validLyrics = parsedLyrics.every((lyric: any) => 
           typeof lyric.start === 'number' && 
           typeof lyric.end === 'number' && 
@@ -186,6 +230,7 @@ const UploadForm: React.FC = () => {
         
         setLyrics(parsedLyrics);
         setError(null);
+        onFilesChange(audioFile, parsedLyrics, albumArtFile, backgroundFile);
       } catch (err) {
         setError(`Invalid lyrics file: ${err instanceof Error ? err.message : 'Unknown error'}`);
         setLyrics(null);
@@ -193,18 +238,112 @@ const UploadForm: React.FC = () => {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'albumArt' | 'background') => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (!file.type.startsWith('image/')) {
+        setError('Please upload a valid image file (PNG, JPG, etc.)');
+        return;
+      }
+      if (type === 'albumArt') {
+        setAlbumArtFile(file);
+        onFilesChange(audioFile, lyrics, file, backgroundFile);
+      } else {
+        setBackgroundFile(file);
+        onFilesChange(audioFile, lyrics, albumArtFile, file);
+      }
+      setError(null);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent, type: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(prev => ({ ...prev, [type]: true }));
+  };
+
+  const handleDragLeave = (e: React.DragEvent, type: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(prev => ({ ...prev, [type]: false }));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent, type: 'audio' | 'lyrics' | 'albumArt' | 'background') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(prev => ({ ...prev, [type]: false }));
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+
+      switch (type) {
+        case 'audio':
+          if (!file.type.startsWith('audio/')) {
+            setError('Please upload a valid audio file');
+            return;
+          }
+          setAudioFile(file);
+          break;
+
+        case 'lyrics':
+          if (!file.name.endsWith('.json')) {
+            setError('Please upload a valid JSON file');
+            return;
+          }
+          setLyricsFile(file);
+          try {
+            const text = await file.text();
+            const parsedLyrics = JSON.parse(text);
+            if (Array.isArray(parsedLyrics)) {
+              setLyrics(parsedLyrics);
+              onFilesChange(audioFile, parsedLyrics, albumArtFile, backgroundFile);
+            } else {
+              throw new Error('Invalid lyrics format');
+            }
+          } catch (err) {
+            setError('Invalid lyrics file format');
+            return;
+          }
+          break;
+
+        case 'albumArt':
+        case 'background':
+          if (!file.type.startsWith('image/')) {
+            setError('Please upload a valid image file');
+            return;
+          }
+          if (type === 'albumArt') {
+            setAlbumArtFile(file);
+            onFilesChange(audioFile, lyrics, file, backgroundFile);
+          } else {
+            setBackgroundFile(file);
+            onFilesChange(audioFile, lyrics, albumArtFile, file);
+          }
+          break;
+      }
+      setError(null);
+    }
+  };
+
   const resetForm = () => {
     setAudioFile(null);
     setLyricsFile(null);
+    setAlbumArtFile(null);
+    setBackgroundFile(null);
     setLyrics(null);
     setError(null);
     setSuccess(null);
     setProgress(0);
-    setVideoPath('');
     
-    // Reset file inputs
     if (audioInputRef.current) audioInputRef.current.value = '';
     if (lyricsInputRef.current) lyricsInputRef.current.value = '';
+    if (albumArtInputRef.current) albumArtInputRef.current.value = '';
+    if (backgroundInputRef.current) backgroundInputRef.current.value = '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,7 +358,6 @@ const UploadForm: React.FC = () => {
       setError(null);
       setSuccess(null);
 
-      // Create an Audio element to get duration
       const audio = new Audio(URL.createObjectURL(audioFile));
       const duration = await new Promise<number>(resolve => {
         audio.addEventListener('loadedmetadata', () => {
@@ -227,11 +365,14 @@ const UploadForm: React.FC = () => {
         });
       });
 
-      // Start the rendering process
       const outputPath = await remotionService.renderVideo(
         audioFile,
         lyrics,
         duration,
+        {
+          albumArtUrl: albumArtFile ? URL.createObjectURL(albumArtFile) : undefined,
+          backgroundImageUrl: backgroundFile ? URL.createObjectURL(backgroundFile) : undefined,
+        },
         (progress) => {
           setProgress(progress.progress * 100);
           if (progress.status === 'error') {
@@ -242,8 +383,9 @@ const UploadForm: React.FC = () => {
       );
 
       setProgress(100);
-      setSuccess(`Video rendered successfully!`);
+      onVideoPathChange(outputPath);
       setVideoPath(outputPath);
+      onVideoPathChange(outputPath);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -259,10 +401,12 @@ const UploadForm: React.FC = () => {
         <h3>Step 1: Upload Files</h3>
         
         <InfoBox>
-          <strong>Note:</strong> You'll need two files to create a lyrics video:
+          <strong>Note:</strong> You'll need the following files:
           <ol>
             <li>An audio file (MP3 or WAV)</li>
-            <li>A JSON file with synchronized lyrics in the following format:</li>
+            <li>A JSON file with synchronized lyrics</li>
+            <li>Album art image (optional)</li>
+            <li>Background image (optional)</li>
           </ol>
           <CodeExample>
 {`[
@@ -277,32 +421,106 @@ const UploadForm: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <div>
             <InputLabel>Audio File (MP3, WAV, etc.)</InputLabel>
-            <FileInput 
-              ref={audioInputRef}
-              type="file" 
-              accept="audio/*" 
-              onChange={handleAudioChange}
-              disabled={isRendering}
-            />
-            {audioFile && (
-              <FileName>Selected: {audioFile.name}</FileName>
-            )}
+            <DropZone
+              isDragging={isDragging['audio']}
+              onDrop={(e) => handleDrop(e, 'audio')}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, 'audio')}
+              onDragLeave={(e) => handleDragLeave(e, 'audio')}
+              onClick={() => audioInputRef.current?.click()}
+            >
+              <DropText>Drag and drop an audio file here or click to browse</DropText>
+              <FileInput 
+                ref={audioInputRef}
+                type="file" 
+                accept="audio/*" 
+                onChange={handleAudioChange}
+                disabled={isRendering}
+              />
+              {audioFile && (
+                <FileName>Selected: {audioFile.name}</FileName>
+              )}
+            </DropZone>
           </div>
           
           <div>
             <InputLabel>Lyrics File (JSON)</InputLabel>
-            <FileInput 
-              ref={lyricsInputRef}
-              type="file" 
-              accept=".json" 
-              onChange={handleLyricsChange}
-              disabled={isRendering}
-            />
-            {lyricsFile && (
-              <FileName>Selected: {lyricsFile.name}</FileName>
-            )}
+            <DropZone
+              isDragging={isDragging['lyrics']}
+              onDrop={(e) => handleDrop(e, 'lyrics')}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, 'lyrics')}
+              onDragLeave={(e) => handleDragLeave(e, 'lyrics')}
+              onClick={() => lyricsInputRef.current?.click()}
+            >
+              <DropText>Drag and drop a JSON file here or click to browse</DropText>
+              <FileInput 
+                ref={lyricsInputRef}
+                type="file" 
+                accept=".json" 
+                onChange={handleLyricsChange}
+                disabled={isRendering}
+              />
+              {lyricsFile && (
+                <FileName>Selected: {lyricsFile.name}</FileName>
+              )}
+            </DropZone>
           </div>
           
+          <div>
+            <InputLabel>Album Art (Optional)</InputLabel>
+            <DropZone
+              isDragging={isDragging['albumArt']}
+              onDrop={(e) => handleDrop(e, 'albumArt')}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, 'albumArt')}
+              onDragLeave={(e) => handleDragLeave(e, 'albumArt')}
+              onClick={() => albumArtInputRef.current?.click()}
+            >
+              <DropText>Drag and drop an image file here or click to browse</DropText>
+              <FileInput 
+                ref={albumArtInputRef}
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => handleImageChange(e, 'albumArt')}
+                disabled={isRendering}
+              />
+              {albumArtFile && (
+                <>
+                  <PreviewImage src={URL.createObjectURL(albumArtFile)} alt="Album Art Preview" />
+                  <FileName>Selected: {albumArtFile.name}</FileName>
+                </>
+              )}
+            </DropZone>
+          </div>
+
+          <div>
+            <InputLabel>Background Image (Optional)</InputLabel>
+            <DropZone
+              isDragging={isDragging['background']}
+              onDrop={(e) => handleDrop(e, 'background')}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, 'background')}
+              onDragLeave={(e) => handleDragLeave(e, 'background')}
+              onClick={() => backgroundInputRef.current?.click()}
+            >
+              <DropText>Drag and drop an image file here or click to browse</DropText>
+              <FileInput 
+                ref={backgroundInputRef}
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => handleImageChange(e, 'background')}
+                disabled={isRendering}
+              />
+              {backgroundFile && (
+                <>
+                  <PreviewImage src={URL.createObjectURL(backgroundFile)} alt="Background Preview" />
+                  <FileName>Selected: {backgroundFile.name}</FileName>
+                </>
+              )}
+            </DropZone>
+          </div>
+
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
             <Button 
               type="submit" 

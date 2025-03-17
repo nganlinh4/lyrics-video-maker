@@ -49,7 +49,7 @@ app.post('/upload/audio', upload.single('audio'), (req, res) => {
 // Render video endpoint
 app.post('/render', async (req, res) => {
   try {
-    const { audioFile, lyrics, durationInSeconds } = req.body;
+    const { audioFile, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl } = req.body;
     if (!audioFile || !lyrics || !durationInSeconds) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
@@ -89,6 +89,9 @@ app.post('/render', async (req, res) => {
         audioUrl: audioUrl,
         lyrics,
         durationInSeconds
+,
+        albumArtUrl,
+        backgroundImageUrl
       }
     });
     console.log('Available compositions:', compositions.map(c => c.id));
@@ -100,6 +103,9 @@ app.post('/render', async (req, res) => {
         audioUrl: audioUrl,
         lyrics,
         durationInSeconds
+,
+        albumArtUrl,
+        backgroundImageUrl
       },
     });
 
@@ -119,6 +125,9 @@ app.post('/render', async (req, res) => {
         audioUrl: audioUrl,
         lyrics,
         durationInSeconds
+,
+        albumArtUrl,
+        backgroundImageUrl
       },
     });
 

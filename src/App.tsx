@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Player } from '@remotion/player';
-import AudioUpload from './components/AudioUpload';
-import LyricsUpload from './components/LyricsUpload';
+import UploadForm from './components/UploadForm';
 import { LyricsVideoContent } from './components/LyricsVideo';
-import VideoPreview from './components/VideoPreview';
 import { RenderControl } from './components/RenderControl';
+import VideoPreview from './components/VideoPreview';
 import { LyricEntry } from './types';
 
 const Container = styled.div`
@@ -52,18 +51,35 @@ const StatusText = styled.div<{ error?: boolean }>`
 const App: React.FC = () => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [lyrics, setLyrics] = useState<LyricEntry[] | null>(null);
+  const [albumArtFile, setAlbumArtFile] = useState<File | null>(null);
+  const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
   const [videoPath, setVideoPath] = useState<string>('');
   const [audioUrl, setAudioUrl] = useState<string>('');
   const [durationInSeconds, setDurationInSeconds] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAudioUpload = async (file: File | null) => {
-    setAudioFile(file);
-    if (file) {
-      const url = URL.createObjectURL(file);
+  useEffect(() => {
+    // Clean up object URLs on unmount
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [audioUrl]);
+
+  const handleFilesChange = async (
+    newAudioFile: File | null,
+    newLyrics: LyricEntry[] | null,
+    newAlbumArtFile: File | null,
+    newBackgroundFile: File | null
+  ) => {
+    setAudioFile(newAudioFile);
+    setLyrics(newLyrics);
+    setAlbumArtFile(newAlbumArtFile);
+    setBackgroundFile(newBackgroundFile);
+
+    if (newAudioFile) {
+      const url = URL.createObjectURL(newAudioFile);
       setAudioUrl(url);
       
-      // Get audio duration
       const audio = new Audio(url);
       await new Promise(resolve => {
         audio.addEventListener('loadedmetadata', () => {
@@ -71,95 +87,62 @@ const App: React.FC = () => {
           resolve(null);
         });
       });
-      
-      setError(null);
-    } else {
-      setAudioUrl('');
     }
   };
-
-  const handleLyricsUpload = (lyricsData: LyricEntry[] | null) => {
-    setLyrics(lyricsData);
-    if (!lyricsData || lyricsData.length === 0) {
-      setError('Invalid lyrics data');
-    } else {
-      setError(null);
-    }
-  };
-
-  const handleRenderComplete = (path: string) => {
-    setVideoPath(path);
-  };
-
-  // Clean up object URLs when component unmounts or when the audio file changes
-  useEffect(() => {
-    return () => {
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
-    };
-  }, [audioUrl]);
 
   // Calculate whether to show preview and render controls
   const canShowPreview = audioFile && lyrics && durationInSeconds > 0;
-  
-  // Calculate duration in frames, ensuring it's an integer
   const durationInFrames = Math.round(Math.max(30, durationInSeconds * 30));
 
   return (
     <Container>
       <Title>Lyrics Video Maker</Title>
       
-      <Card>
-        <h2>Step 1: Upload Audio</h2>
-        <AudioUpload onAudioUpload={handleAudioUpload} />
-      </Card>
-      
-      <Card>
-        <h2>Step 2: Upload Lyrics</h2>
-        <LyricsUpload onLyricsUpload={handleLyricsUpload} />
-      </Card>
-      
-      {error && (
-        <StatusText error>{error}</StatusText>
-      )}
-      
       {canShowPreview && (
         <Card>
-          <h2>Step 3: Preview</h2>
+          <h2>Video Preview</h2>
           <PreviewContainer>
             <Player
               component={LyricsVideoContent}
-              durationInFrames={durationInFrames} // Use the rounded value here
+              durationInFrames={durationInFrames}
               compositionWidth={1280}
               compositionHeight={720}
               fps={30}
               controls
               inputProps={{
-                audioUrl: audioUrl,
+                audioUrl,
                 lyrics: lyrics || [],
-                durationInSeconds
+                durationInSeconds,
+                albumArtUrl: albumArtFile ? URL.createObjectURL(albumArtFile) : undefined,
+                backgroundImageUrl: backgroundFile ? URL.createObjectURL(backgroundFile) : undefined
               }}
             />
           </PreviewContainer>
         </Card>
       )}
       
-      {canShowPreview && (
-        <Card>
-          <h2>Step 4: Render Video</h2>
-          <RenderControl 
-            audioFile={audioFile} 
-            lyrics={lyrics} 
+      <Card>
+        <UploadForm
+          onFilesChange={handleFilesChange}
+          onVideoPathChange={setVideoPath}
+        />
+
+        {canShowPreview && (
+          <RenderControl
+            audioFile={audioFile}
+            lyrics={lyrics}
             durationInSeconds={durationInSeconds}
-            onRenderComplete={handleRenderComplete} 
+            albumArtFile={albumArtFile}
+            backgroundFile={backgroundFile}
+            onRenderComplete={setVideoPath}
           />
-        </Card>
-      )}
+        )}
+  
+    </Card>
       
       {videoPath && (
         <Card>
-          <h2>Step 5: Final Video</h2>
+          <h2>Final Video</h2>
           <VideoPreview videoUrl={videoPath} />
         </Card>
       )}
