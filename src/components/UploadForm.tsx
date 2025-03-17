@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { LyricEntry } from '../types';
-import remotionService from '../services/remotionService';
 import VideoPreview from './VideoPreview';
 
 const FormContainer = styled.div`
@@ -83,57 +82,6 @@ const Button = styled.button`
   }
 `;
 
-const Progress = styled.div<{ progress: number }>`
-  width: 100%;
-  height: 20px;
-  background: #eee;
-  border-radius: 10px;
-  overflow: hidden;
-  margin-top: 1rem;
-  position: relative;
-
-  &::after {
-    content: '';
-    display: block;
-    width: ${props => props.progress}%;
-    height: 100%;
-    background: linear-gradient(90deg, #6e8efb 0%, #a777e3 100%);
-    transition: width 0.3s ease;
-  }
-`;
-
-const ProgressText = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  color: #333;
-  z-index: 1;
-`;
-
-const ErrorMessage = styled.div`
-  color: #e53935;
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background-color: #ffebee;
-  border-radius: 4px;
-  border-left: 4px solid #e53935;
-`;
-
-const SuccessMessage = styled.div`
-  color: #43a047;
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background-color: #e8f5e9;
-  border-radius: 4px;
-  border-left: 4px solid #43a047;
-`;
-
 const InfoBox = styled.div`
   background-color: #e3f2fd;
   border-left: 4px solid #2196f3;
@@ -169,6 +117,15 @@ const DropText = styled.p`
   color: #666;
 `;
 
+const ErrorMessage = styled.div`
+  color: #e53935;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #ffebee;
+  border-radius: 4px;
+  border-left: 4px solid #e53935;
+`;
+
 interface UploadFormProps {
   onFilesChange: (audioFile: File | null, lyrics: LyricEntry[] | null, albumArt: File | null, background: File | null) => void;
   onVideoPathChange: (path: string) => void;
@@ -180,10 +137,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
   const [albumArtFile, setAlbumArtFile] = useState<File | null>(null);
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
   const [lyrics, setLyrics] = useState<LyricEntry[] | null>(null);
-  const [isRendering, setIsRendering] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<{[key: string]: boolean}>({});
   const [videoPath, setVideoPath] = useState<string | null>(null);
   
@@ -337,8 +291,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     setBackgroundFile(null);
     setLyrics(null);
     setError(null);
-    setSuccess(null);
-    setProgress(0);
+    setVideoPath(null);
+    onFilesChange(null, null, null, null);
     
     if (audioInputRef.current) audioInputRef.current.value = '';
     if (lyricsInputRef.current) lyricsInputRef.current.value = '';
@@ -346,221 +300,137 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     if (backgroundInputRef.current) backgroundInputRef.current.value = '';
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!audioFile || !lyrics) {
-      setError('Please upload both audio and lyrics files');
-      return;
-    }
-
-    try {
-      setIsRendering(true);
-      setError(null);
-      setSuccess(null);
-
-      const audio = new Audio(URL.createObjectURL(audioFile));
-      const duration = await new Promise<number>(resolve => {
-        audio.addEventListener('loadedmetadata', () => {
-          resolve(audio.duration);
-        });
-      });
-
-      const outputPath = await remotionService.renderVideo(
-        audioFile,
-        lyrics,
-        duration,
-        {
-          albumArtUrl: albumArtFile ? URL.createObjectURL(albumArtFile) : undefined,
-          backgroundImageUrl: backgroundFile ? URL.createObjectURL(backgroundFile) : undefined,
-        },
-        (progress) => {
-          setProgress(progress.progress * 100);
-          if (progress.status === 'error') {
-            setError(progress.error || 'An error occurred during rendering');
-            setIsRendering(false);
-          }
-        }
-      );
-
-      setProgress(100);
-      onVideoPathChange(outputPath);
-      setVideoPath(outputPath);
-      onVideoPathChange(outputPath);
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setIsRendering(false);
-    }
-  };
-
   return (
     <FormContainer>
-      <h2>Create Lyrics Video</h2>
+      <h2>Upload Files</h2>
       
-      <Section>
-        <h3>Step 1: Upload Files</h3>
-        
-        <InfoBox>
-          <strong>Note:</strong> You'll need the following files:
-          <ol>
-            <li>An audio file (MP3 or WAV)</li>
-            <li>A JSON file with synchronized lyrics</li>
-            <li>Album art image (optional)</li>
-            <li>Background image (optional)</li>
-          </ol>
-          <CodeExample>
+      <InfoBox>
+        <strong>Note:</strong> You'll need the following files:
+        <ol>
+          <li>An audio file (MP3 or WAV)</li>
+          <li>A JSON file with synchronized lyrics</li>
+          <li>Album art image (optional)</li>
+          <li>Background image (optional)</li>
+        </ol>
+        <CodeExample>
 {`[
   {"start": 0.5, "end": 2.5, "text": "First line of lyrics"},
   {"start": 3.0, "end": 5.5, "text": "Second line of lyrics"},
   {"start": 6.0, "end": 9.0, "text": "Third line of lyrics"}
 ]`}
-          </CodeExample>
-          Each lyric entry needs "start" and "end" times (in seconds) and the "text" to display.
-        </InfoBox>
+        </CodeExample>
+        Each lyric entry needs "start" and "end" times (in seconds) and the "text" to display.
+      </InfoBox>
 
-        <form onSubmit={handleSubmit}>
-          <div>
-            <InputLabel>Audio File (MP3, WAV, etc.)</InputLabel>
-            <DropZone
-              isDragging={isDragging['audio']}
-              onDrop={(e) => handleDrop(e, 'audio')}
-              onDragOver={handleDragOver}
-              onDragEnter={(e) => handleDragEnter(e, 'audio')}
-              onDragLeave={(e) => handleDragLeave(e, 'audio')}
-              onClick={() => audioInputRef.current?.click()}
-            >
-              <DropText>Drag and drop an audio file here or click to browse</DropText>
-              <FileInput 
-                ref={audioInputRef}
-                type="file" 
-                accept="audio/*" 
-                onChange={handleAudioChange}
-                disabled={isRendering}
-              />
-              {audioFile && (
-                <FileName>Selected: {audioFile.name}</FileName>
-              )}
-            </DropZone>
-          </div>
-          
-          <div>
-            <InputLabel>Lyrics File (JSON)</InputLabel>
-            <DropZone
-              isDragging={isDragging['lyrics']}
-              onDrop={(e) => handleDrop(e, 'lyrics')}
-              onDragOver={handleDragOver}
-              onDragEnter={(e) => handleDragEnter(e, 'lyrics')}
-              onDragLeave={(e) => handleDragLeave(e, 'lyrics')}
-              onClick={() => lyricsInputRef.current?.click()}
-            >
-              <DropText>Drag and drop a JSON file here or click to browse</DropText>
-              <FileInput 
-                ref={lyricsInputRef}
-                type="file" 
-                accept=".json" 
-                onChange={handleLyricsChange}
-                disabled={isRendering}
-              />
-              {lyricsFile && (
-                <FileName>Selected: {lyricsFile.name}</FileName>
-              )}
-            </DropZone>
-          </div>
-          
-          <div>
-            <InputLabel>Album Art (Optional)</InputLabel>
-            <DropZone
-              isDragging={isDragging['albumArt']}
-              onDrop={(e) => handleDrop(e, 'albumArt')}
-              onDragOver={handleDragOver}
-              onDragEnter={(e) => handleDragEnter(e, 'albumArt')}
-              onDragLeave={(e) => handleDragLeave(e, 'albumArt')}
-              onClick={() => albumArtInputRef.current?.click()}
-            >
-              <DropText>Drag and drop an image file here or click to browse</DropText>
-              <FileInput 
-                ref={albumArtInputRef}
-                type="file" 
-                accept="image/*" 
-                onChange={(e) => handleImageChange(e, 'albumArt')}
-                disabled={isRendering}
-              />
-              {albumArtFile && (
-                <>
-                  <PreviewImage src={URL.createObjectURL(albumArtFile)} alt="Album Art Preview" />
-                  <FileName>Selected: {albumArtFile.name}</FileName>
-                </>
-              )}
-            </DropZone>
-          </div>
-
-          <div>
-            <InputLabel>Background Image (Optional)</InputLabel>
-            <DropZone
-              isDragging={isDragging['background']}
-              onDrop={(e) => handleDrop(e, 'background')}
-              onDragOver={handleDragOver}
-              onDragEnter={(e) => handleDragEnter(e, 'background')}
-              onDragLeave={(e) => handleDragLeave(e, 'background')}
-              onClick={() => backgroundInputRef.current?.click()}
-            >
-              <DropText>Drag and drop an image file here or click to browse</DropText>
-              <FileInput 
-                ref={backgroundInputRef}
-                type="file" 
-                accept="image/*" 
-                onChange={(e) => handleImageChange(e, 'background')}
-                disabled={isRendering}
-              />
-              {backgroundFile && (
-                <>
-                  <PreviewImage src={URL.createObjectURL(backgroundFile)} alt="Background Preview" />
-                  <FileName>Selected: {backgroundFile.name}</FileName>
-                </>
-              )}
-            </DropZone>
-          </div>
-
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <Button 
-              type="submit" 
-              disabled={!audioFile || !lyrics || isRendering}
-            >
-              {isRendering ? 'Rendering...' : 'Create Video'}
-            </Button>
-            
-            <Button 
-              type="button" 
-              onClick={resetForm}
-              disabled={isRendering}
-              style={{ background: '#f44336' }}
-            >
-              Reset
-            </Button>
-          </div>
-          
-          {isRendering && (
-            <div style={{ marginTop: '1rem' }}>
-              <Progress progress={progress}>
-                <ProgressText>{Math.round(progress)}%</ProgressText>
-              </Progress>
-              <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-                Rendering your video... Please wait.
-              </div>
-            </div>
+      <div>
+        <InputLabel>Audio File (MP3, WAV, etc.)</InputLabel>
+        <DropZone
+          isDragging={isDragging['audio']}
+          onDrop={(e) => handleDrop(e, 'audio')}
+          onDragOver={handleDragOver}
+          onDragEnter={(e) => handleDragEnter(e, 'audio')}
+          onDragLeave={(e) => handleDragLeave(e, 'audio')}
+          onClick={() => audioInputRef.current?.click()}
+        >
+          <DropText>Drag and drop an audio file here or click to browse</DropText>
+          <FileInput 
+            ref={audioInputRef}
+            type="file" 
+            accept="audio/*" 
+            onChange={handleAudioChange}
+          />
+          {audioFile && (
+            <FileName>Selected: {audioFile.name}</FileName>
           )}
-          
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          {success && <SuccessMessage>{success}</SuccessMessage>}
-        </form>
-      </Section>
+        </DropZone>
+      </div>
       
-      {videoPath && (
-        <Section>
-          <h3>Step 2: Your Rendered Video</h3>
-          <VideoPreview videoUrl={videoPath} />
-        </Section>
-      )}
+      <div>
+        <InputLabel>Lyrics File (JSON)</InputLabel>
+        <DropZone
+          isDragging={isDragging['lyrics']}
+          onDrop={(e) => handleDrop(e, 'lyrics')}
+          onDragOver={handleDragOver}
+          onDragEnter={(e) => handleDragEnter(e, 'lyrics')}
+          onDragLeave={(e) => handleDragLeave(e, 'lyrics')}
+          onClick={() => lyricsInputRef.current?.click()}
+        >
+          <DropText>Drag and drop a JSON file here or click to browse</DropText>
+          <FileInput 
+            ref={lyricsInputRef}
+            type="file" 
+            accept=".json" 
+            onChange={handleLyricsChange}
+          />
+          {lyricsFile && (
+            <FileName>Selected: {lyricsFile.name}</FileName>
+          )}
+        </DropZone>
+      </div>
+      
+      <div>
+        <InputLabel>Album Art (Optional)</InputLabel>
+        <DropZone
+          isDragging={isDragging['albumArt']}
+          onDrop={(e) => handleDrop(e, 'albumArt')}
+          onDragOver={handleDragOver}
+          onDragEnter={(e) => handleDragEnter(e, 'albumArt')}
+          onDragLeave={(e) => handleDragLeave(e, 'albumArt')}
+          onClick={() => albumArtInputRef.current?.click()}
+        >
+          <DropText>Drag and drop an image file here or click to browse</DropText>
+          <FileInput 
+            ref={albumArtInputRef}
+            type="file" 
+            accept="image/*" 
+            onChange={(e) => handleImageChange(e, 'albumArt')}
+          />
+          {albumArtFile && (
+            <>
+              <PreviewImage src={URL.createObjectURL(albumArtFile)} alt="Album Art Preview" />
+              <FileName>Selected: {albumArtFile.name}</FileName>
+            </>
+          )}
+        </DropZone>
+      </div>
+
+      <div>
+        <InputLabel>Background Image (Optional)</InputLabel>
+        <DropZone
+          isDragging={isDragging['background']}
+          onDrop={(e) => handleDrop(e, 'background')}
+          onDragOver={handleDragOver}
+          onDragEnter={(e) => handleDragEnter(e, 'background')}
+          onDragLeave={(e) => handleDragLeave(e, 'background')}
+          onClick={() => backgroundInputRef.current?.click()}
+        >
+          <DropText>Drag and drop an image file here or click to browse</DropText>
+          <FileInput 
+            ref={backgroundInputRef}
+            type="file" 
+            accept="image/*" 
+            onChange={(e) => handleImageChange(e, 'background')}
+          />
+          {backgroundFile && (
+            <>
+              <PreviewImage src={URL.createObjectURL(backgroundFile)} alt="Background Preview" />
+              <FileName>Selected: {backgroundFile.name}</FileName>
+            </>
+          )}
+        </DropZone>
+      </div>
+
+      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+        <Button 
+          type="button" 
+          onClick={resetForm}
+          style={{ background: '#f44336' }}
+        >
+          Reset
+        </Button>
+      </div>
+      
+      {error && <ErrorMessage>{error}</ErrorMessage>}
     </FormContainer>
   );
 };

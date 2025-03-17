@@ -35,13 +35,14 @@ app.use(express.json());
 app.use('/uploads', express.static(uploadsDir));
 app.use('/output', express.static(outputDir));
 
-// Upload endpoint for audio file
-app.post('/upload/audio', upload.single('audio'), (req, res) => {
+// Upload endpoint for audio and images
+app.post('/upload/:type', upload.single('file'), (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ error: 'No audio file uploaded' });
+    return res.status(400).json({ error: 'No file uploaded' });
   }
+  const url = `http://localhost:${port}/uploads/${req.file.filename}`;
   res.json({ 
-    url: `http://localhost:${port}/uploads/${req.file.filename}`,
+    url,
     filename: req.file.filename
   });
 });
@@ -56,7 +57,6 @@ app.post('/render', async (req, res) => {
 
     const compositionId = 'lyrics-video';
     const fps = 30;
-    // Calculate the exact number of frames based on the lyrics duration
     const durationInFrames = Math.max(30, Math.ceil(durationInSeconds * fps));
     
     const outputFile = `lyrics-video-${Date.now()}.mp4`;
@@ -88,8 +88,7 @@ app.post('/render', async (req, res) => {
       inputProps: {
         audioUrl: audioUrl,
         lyrics,
-        durationInSeconds
-,
+        durationInSeconds,
         albumArtUrl,
         backgroundImageUrl
       }
@@ -102,8 +101,7 @@ app.post('/render', async (req, res) => {
       inputProps: {
         audioUrl: audioUrl,
         lyrics,
-        durationInSeconds
-,
+        durationInSeconds,
         albumArtUrl,
         backgroundImageUrl
       },
@@ -124,8 +122,7 @@ app.post('/render', async (req, res) => {
       inputProps: {
         audioUrl: audioUrl,
         lyrics,
-        durationInSeconds
-,
+        durationInSeconds,
         albumArtUrl,
         backgroundImageUrl
       },

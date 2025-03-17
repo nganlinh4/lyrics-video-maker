@@ -20,6 +20,23 @@ export class RemotionService {
   private compositionId = 'lyrics-video';
   private fps = 30;
 
+  private async uploadFile(file: File, endpoint: string): Promise<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${SERVER_URL}/upload/${endpoint}`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload ${endpoint}`);
+    }
+
+    const { url } = await response.json();
+    return url;
+  }
+
   async renderVideo(
     audioFile: File,
     lyrics: LyricEntry[],
@@ -28,22 +45,17 @@ export class RemotionService {
     onProgress?: (progress: RenderProgress) => void
   ): Promise<string> {
     try {
-      // Upload audio file
-      const formData = new FormData();
-      formData.append('audio', audioFile);
+      // Upload all files first
+      const [audioUrl, albumArtUrl, backgroundUrl] = await Promise.all([
+        this.uploadFile(audioFile, 'audio'),
+        options.albumArtUrl && options.albumArtUrl.startsWith('blob:') 
+          ? this.uploadFile(await fetch(options.albumArtUrl).then(r => r.blob()).then(b => new File([b], 'album.jpg')), 'image') 
+          : Promise.resolve(undefined),
+        options.backgroundImageUrl && options.backgroundImageUrl.startsWith('blob:')
+          ? this.uploadFile(await fetch(options.backgroundImageUrl).then(r => r.blob()).then(b => new File([b], 'background.jpg')), 'image')
+          : Promise.resolve(undefined)
+      ]);
 
-      const uploadResponse = await fetch(`${SERVER_URL}/upload/audio`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload audio file');
-      }
-
-      const { filename } = await uploadResponse.json();
-
-      // Use the actual audio duration instead of calculating from lyrics
       onProgress?.({
         progress: 0,
         durationInFrames: Math.round(durationInSeconds * this.fps),
@@ -51,18 +63,18 @@ export class RemotionService {
         status: 'rendering'
       });
 
-      // Request video rendering
+      // Request video rendering with server URLs
       const renderResponse = await fetch(`${SERVER_URL}/render`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          audioFile: filename,
+          audioFile: audioUrl.split('/').pop(),
           lyrics,
           durationInSeconds,
-          albumArtUrl: options.albumArtUrl,
-          backgroundImageUrl: options.backgroundImageUrl,
+          albumArtUrl,
+          backgroundImageUrl: backgroundUrl,
         }),
       });
 

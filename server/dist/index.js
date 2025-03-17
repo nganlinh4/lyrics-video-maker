@@ -34,26 +34,26 @@ app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use('/uploads', express_1.default.static(uploadsDir));
 app.use('/output', express_1.default.static(outputDir));
-// Upload endpoint for audio file
-app.post('/upload/audio', upload.single('audio'), (req, res) => {
+// Upload endpoint for audio and images
+app.post('/upload/:type', upload.single('file'), (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ error: 'No audio file uploaded' });
+        return res.status(400).json({ error: 'No file uploaded' });
     }
+    const url = `http://localhost:${port}/uploads/${req.file.filename}`;
     res.json({
-        url: `http://localhost:${port}/uploads/${req.file.filename}`,
+        url,
         filename: req.file.filename
     });
 });
 // Render video endpoint
 app.post('/render', async (req, res) => {
     try {
-        const { audioFile, lyrics, durationInSeconds } = req.body;
+        const { audioFile, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl } = req.body;
         if (!audioFile || !lyrics || !durationInSeconds) {
             return res.status(400).json({ error: 'Missing required parameters' });
         }
         const compositionId = 'lyrics-video';
         const fps = 30;
-        // Calculate the exact number of frames based on the lyrics duration
         const durationInFrames = Math.max(30, Math.ceil(durationInSeconds * fps));
         const outputFile = `lyrics-video-${Date.now()}.mp4`;
         const outputPath = path_1.default.join(outputDir, outputFile);
@@ -77,7 +77,9 @@ app.post('/render', async (req, res) => {
             inputProps: {
                 audioUrl: audioUrl,
                 lyrics,
-                durationInSeconds
+                durationInSeconds,
+                albumArtUrl,
+                backgroundImageUrl
             }
         });
         console.log('Available compositions:', compositions.map(c => c.id));
@@ -87,7 +89,9 @@ app.post('/render', async (req, res) => {
             inputProps: {
                 audioUrl: audioUrl,
                 lyrics,
-                durationInSeconds
+                durationInSeconds,
+                albumArtUrl,
+                backgroundImageUrl
             },
         });
         // Force the composition duration to match our calculated duration
@@ -103,7 +107,9 @@ app.post('/render', async (req, res) => {
             inputProps: {
                 audioUrl: audioUrl,
                 lyrics,
-                durationInSeconds
+                durationInSeconds,
+                albumArtUrl,
+                backgroundImageUrl
             },
         });
         const videoUrl = `http://localhost:${port}/output/${outputFile}`;
