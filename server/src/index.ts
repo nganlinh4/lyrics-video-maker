@@ -5,6 +5,10 @@ import path from 'path';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition, getCompositions } from '@remotion/renderer';
 
+// Set Remotion environment variables for GPU acceleration
+process.env.REMOTION_CHROME_MODE = "chrome-for-testing";
+process.env.REMOTION_GL = "vulkan";
+
 const app = express();
 const port = process.env.PORT || 3003;
 
@@ -110,8 +114,8 @@ app.post('/render', async (req, res) => {
     // Force the composition duration to match our calculated duration
     composition.durationInFrames = durationInFrames;
     
-    // Render the video
-    console.log('Starting rendering process...');
+    // Render the video with GPU acceleration
+    console.log('Starting rendering process with Vulkan GPU acceleration...');
     console.log('Using composition duration:', composition.durationInFrames, 'frames');
     
     await renderMedia({
@@ -126,6 +130,11 @@ app.post('/render', async (req, res) => {
         albumArtUrl,
         backgroundImageUrl
       },
+      chromiumOptions: {
+        disableWebSecurity: true,
+        ignoreCertificateErrors: true,
+        gl: "vulkan"
+      }
     });
 
     const videoUrl = `http://localhost:${port}/output/${outputFile}`;
@@ -141,4 +150,7 @@ app.post('/render', async (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
+  console.log('GPU settings:');
+  console.log('REMOTION_CHROME_MODE:', process.env.REMOTION_CHROME_MODE);
+  console.log('REMOTION_GL:', process.env.REMOTION_GL);
 });
