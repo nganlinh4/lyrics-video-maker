@@ -57,11 +57,21 @@ const App: React.FC = () => {
   const [durationInSeconds, setDurationInSeconds] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAudioUpload = (file: File | null) => {
+  const handleAudioUpload = async (file: File | null) => {
     setAudioFile(file);
     if (file) {
       const url = URL.createObjectURL(file);
       setAudioUrl(url);
+      
+      // Get audio duration
+      const audio = new Audio(url);
+      await new Promise(resolve => {
+        audio.addEventListener('loadedmetadata', () => {
+          setDurationInSeconds(audio.duration);
+          resolve(null);
+        });
+      });
+      
       setError(null);
     } else {
       setAudioUrl('');
@@ -70,13 +80,10 @@ const App: React.FC = () => {
 
   const handleLyricsUpload = (lyricsData: LyricEntry[] | null) => {
     setLyrics(lyricsData);
-    if (lyricsData && lyricsData.length > 0) {
-      // Calculate duration based on the end time of the last lyric + 2 seconds
-      const lastLyricEnd = Math.max(...lyricsData.map(lyric => lyric.end));
-      setDurationInSeconds(lastLyricEnd + 2);
-      setError(null);
+    if (!lyricsData || lyricsData.length === 0) {
+      setError('Invalid lyrics data');
     } else {
-      setDurationInSeconds(0);
+      setError(null);
     }
   };
 

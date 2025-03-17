@@ -219,15 +219,27 @@ const UploadForm: React.FC = () => {
       setError(null);
       setSuccess(null);
 
-      // Start the rendering process
-      const outputPath = await remotionService.renderVideo(audioFile, lyrics, (progress) => {
-        setProgress(progress.progress * 100);
-        if (progress.status === 'error') {
-          setError(progress.error || 'An error occurred during rendering');
-          setIsRendering(false);
-        }
+      // Create an Audio element to get duration
+      const audio = new Audio(URL.createObjectURL(audioFile));
+      const duration = await new Promise<number>(resolve => {
+        audio.addEventListener('loadedmetadata', () => {
+          resolve(audio.duration);
+        });
       });
 
+      // Start the rendering process
+      const outputPath = await remotionService.renderVideo(
+        audioFile,
+        lyrics,
+        duration,
+        (progress) => {
+          setProgress(progress.progress * 100);
+          if (progress.status === 'error') {
+            setError(progress.error || 'An error occurred during rendering');
+            setIsRendering(false);
+          }
+        }
+      );
 
       setProgress(100);
       setSuccess(`Video rendered successfully!`);

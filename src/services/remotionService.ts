@@ -17,6 +17,7 @@ export class RemotionService {
   async renderVideo(
     audioFile: File,
     lyrics: LyricEntry[],
+    durationInSeconds: number,
     onProgress?: (progress: RenderProgress) => void
   ): Promise<string> {
     try {
@@ -35,11 +36,7 @@ export class RemotionService {
 
       const { filename } = await uploadResponse.json();
 
-      // Calculate video duration
-      const lastLyricEnd = Math.max(...lyrics.map(l => l.end));
-      const durationInSeconds = lastLyricEnd + 2; // 2 seconds buffer at the end
-
-      // Start rendering
+      // Use the actual audio duration instead of calculating from lyrics
       onProgress?.({
         progress: 0,
         durationInFrames: Math.round(durationInSeconds * this.fps),

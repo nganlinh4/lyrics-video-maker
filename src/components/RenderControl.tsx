@@ -88,12 +88,14 @@ export const RenderControl: React.FC<Props> = ({
     }
 
     setIsRendering(true);
+    setProgress(0);
     setError(null);
 
     try {
       const videoPath = await remotionService.renderVideo(
         audioFile,
         lyrics,
+        durationInSeconds, // Pass the actual audio duration
         (progress) => {
           if (progress.status === 'error') {
             setError(progress.error || 'An error occurred during rendering');
