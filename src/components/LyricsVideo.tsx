@@ -70,10 +70,55 @@ export const LyricsComponent: React.FC<{ lyrics: LyricEntry[] }> = ({ lyrics }) 
   );
 };
 
+const ParticleBackground: React.FC = () => {
+  const { width, height, fps } = useVideoConfig();
+  const frame = useCurrentFrame();
+  const particleCount = 50;
+  
+  return (
+    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
+      {Array.from({ length: particleCount }).map((_, i) => {
+        const size = 3 + Math.random() * 6;
+        const speed = 0.2 + Math.random() * 0.5;
+        const baseX = (i / particleCount) * width;
+        const x = baseX + Math.sin((frame / fps) * speed + i) * 50;
+        const y = height * 0.1 + (Math.sin((frame / fps) * speed + i * 2) + 1) * height * 0.4;
+        const opacity = 0.1 + Math.random() * 0.2;
+        
+        return (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              width: `${size}px`,
+              height: `${size}px`,
+              borderRadius: '50%',
+              backgroundColor: i % 5 === 0 ? 'rgb(30, 215, 96)' : 'white',
+              opacity,
+              transform: `translate(${x}px, ${y}px)`,
+              boxShadow: i % 5 === 0 ? '0 0 10px 2px rgba(30, 215, 96, 0.3)' : 'none',
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
 export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl }) => {
   const frame = useCurrentFrame();
   const { fps, height, width } = useVideoConfig();
   const currentTimeInSeconds = frame / fps;
+
+  // Audio reactivity effect
+  const audioReactiveEffect = useMemo(() => {
+    return Math.abs(Math.sin(frame / (fps * 0.25)) * 0.5) + 0.5;
+  }, [frame, fps]);
+
+  // Parallax effect
+  const parallaxOffset = useMemo(() => {
+    return Math.sin(frame / fps * 0.5) * 10;
+  }, [frame, fps]);
 
   // Find the active lyric index
   const activeLyricIndex = useMemo(() => {
@@ -159,13 +204,12 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
   return (
     <AbsoluteFill
       style={{
-        // Replace the background shorthand with individual properties
         backgroundColor: '#000',
         backgroundImage: backgroundImageUrl 
           ? `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url(${backgroundImageUrl})` 
           : 'linear-gradient(180deg, #121212 0%, #060606 100%)',
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundPosition: `calc(50% + ${parallaxOffset}px) center`,
         backgroundRepeat: 'no-repeat',
         display: 'flex',
         alignItems: 'center',
@@ -173,9 +217,11 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
         overflow: 'hidden',
       }}
     >
+      {/* Base layer */}
+      <ParticleBackground />
       {audioUrl && <Audio src={audioUrl} />}
 
-      {/* Animated background gradient pulse */}
+      {/* Background effects layer */}
       <div
         style={{
           position: 'absolute',
@@ -183,140 +229,142 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
           left: 0,
           right: 0,
           bottom: 0,
-          background: `radial-gradient(
-            circle at ${width / 2}px ${BASE_POSITION}px,
-            rgba(30, 215, 96, ${backgroundPulse}),
-            transparent 70%
-          )`,
+          backdropFilter: `blur(${2 + audioReactiveEffect * 4}px)`,
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          zIndex: 1,
         }}
       />
 
-      {/* Album Cover */}
-      <div
-        style={{
-          position: 'absolute',
-          left: ALBUM_COVER_MARGIN,
-          top: `calc(50% - ${ALBUM_COVER_SIZE / 2}px)`,
-          transform: `translateY(${albumCoverOffset}px)`,
-          width: ALBUM_COVER_SIZE,
-          height: ALBUM_COVER_SIZE,
-          backgroundColor: 'rgba(30, 30, 30, 0.6)',
-          borderRadius: '8px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        {albumArtUrl ? (
-          <img
-            src={albumArtUrl}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              borderRadius: '8px',
-            }}
-            alt="Album Art"
-          />
-        ) : (
-          <>
-            <div style={{
+      {/* Content layer */}
+      <div style={{ position: 'relative', width: '100%', height: '100%', zIndex: 2 }}>
+        {/* Album Cover */}
+        <div
+          style={{
+            position: 'absolute',
+            left: ALBUM_COVER_MARGIN,
+            top: `calc(50% - ${ALBUM_COVER_SIZE / 2}px)`,
+            transform: `translateY(${albumCoverOffset}px)`,
+            width: ALBUM_COVER_SIZE,
+            height: ALBUM_COVER_SIZE,
+            backgroundColor: 'rgba(30, 30, 30, 0.6)',
+            borderRadius: '8px',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}
+        >
+          {albumArtUrl ? (
+            <img
+              src={albumArtUrl}
+              style={{
                 width: '100%',
                 height: '100%',
-                background: `linear-gradient(45deg, 
-                  rgba(40, 40, 40, 0.6) 25%, 
-                  rgba(60, 60, 60, 0.6) 25%, 
-                  rgba(60, 60, 60, 0.6) 50%, 
-                  rgba(40, 40, 40, 0.6) 50%, 
-                  rgba(40, 40, 40, 0.6) 75%, 
-                  rgba(60, 60, 60, 0.6) 75%)`,
-                backgroundSize: '40px 40px',
-                opacity: 0.8,
+                objectFit: 'cover',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
               }}
-             />
-            <div style={{position: 'absolute', fontSize: '80px', color: 'rgba(255, 255, 255, 0.3)'}}>♪</div>
-          </>
-        )}
-      </div>
+              alt="Album Art"
+            />
+          ) : (
+            <>
+              <div style={{
+                  width: '100%',
+                  height: '100%',
+                  background: `linear-gradient(45deg, 
+                    rgba(40, 40, 40, 0.6) 25%, 
+                    rgba(60, 60, 60, 0.6) 25%, 
+                    rgba(60, 60, 60, 0.6) 50%, 
+                    rgba(40, 40, 40, 0.6) 50%, 
+                    rgba(40, 40, 40, 0.6) 75%, 
+                    rgba(60, 60, 60, 0.6) 75%)`,
+                  backgroundSize: '40px 40px',
+                  opacity: 0.8,
+                }}
+               />
+              <div style={{position: 'absolute', fontSize: '80px', color: 'rgba(255, 255, 255, 0.3)'}}>♪</div>
+            </>
+          )}
+        </div>
 
-      {/* Lyrics Container */}
-      <div
-        style={{
-          width: '85%',  // You can adjust this percentage
-          maxWidth: '900px', // Add this to set a maximum width
-          textAlign: 'center',
-          height: '100%',
-          position: 'relative',
-          marginLeft: ALBUM_COVER_SIZE + ALBUM_COVER_MARGIN * 2,
-        }}
-      >
-        {lyrics?.map((lyric: LyricEntry, index: number) => {
-          const progress = getLyricProgress(lyric, currentTimeInSeconds);
-          const naturalPosition = index * (LYRIC_HEIGHT + LYRIC_MARGIN);
-          const position = naturalPosition - scrollOffset;
-          const distance = Math.abs(position - BASE_POSITION);
-          
-          const scale = interpolate(distance, [0, 150], [1.08, 0.92], {
-            extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp'
-          });
-          
-          const opacity = interpolate(distance, [0, 200], [1, 0.3], {
-            extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp'
-          });
+        {/* Lyrics Container */}
+        <div
+          style={{
+            width: '85%',
+            maxWidth: '900px',
+            textAlign: 'center',
+            height: '100%',
+            position: 'relative',
+            marginLeft: ALBUM_COVER_SIZE + ALBUM_COVER_MARGIN * 2,
+          }}
+        >
+          {lyrics?.map((lyric: LyricEntry, index: number) => {
+            const progress = getLyricProgress(lyric, currentTimeInSeconds);
+            const naturalPosition = index * (LYRIC_HEIGHT + LYRIC_MARGIN);
+            const position = naturalPosition - scrollOffset;
+            const distance = Math.abs(position - BASE_POSITION);
+            
+            const scale = interpolate(distance, [0, 150], [1.08, 0.92], {
+              extrapolateLeft: 'clamp',
+              extrapolateRight: 'clamp'
+            });
+            
+            const opacity = interpolate(distance, [0, 200], [1, 0.3], {
+              extrapolateLeft: 'clamp',
+              extrapolateRight: 'clamp'
+            });
 
-          const fontSize = interpolate(progress, [0, 1], [INACTIVE_FONT_SIZE, ACTIVE_FONT_SIZE], {
-            extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp',
-          });
+            const fontSize = interpolate(progress, [0, 1], [INACTIVE_FONT_SIZE, ACTIVE_FONT_SIZE], {
+              extrapolateLeft: 'clamp',
+              extrapolateRight: 'clamp',
+            });
 
-          const color = interpolateColor(progress, INACTIVE_COLOR, ACTIVE_COLOR);
-          // Removed fontWeight calculation
+            const color = interpolateColor(progress, INACTIVE_COLOR, ACTIVE_COLOR);
+            // Removed fontWeight calculation
 
-          return (
-            <div
-              key={index}
-              style={{
-                position: 'absolute',
-                width: '100%',
-                left: '50%',
-                top: 0,
-                opacity,
-                transform: `translate(-50%, ${position}px) scale(${scale})`,
-                fontSize: `${fontSize}px`,
-                fontFamily: "'Montserrat', 'Circular', -apple-system, BlinkMacSystemFont, sans-serif",
-                fontWeight: 400, // Keep constant font weight
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                whiteSpace: 'pre-wrap',
-                letterSpacing: '0',
-                userSelect: 'none',
-                zIndex: 100 - Math.abs(activeLyricIndex - index),
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-              }}
-            >
+            return (
               <div
+                key={index}
                 style={{
-                  position: 'relative',
-                  display: 'inline-block',
-                  maxWidth: '90%',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  overflow: 'hidden',
+                  position: 'absolute',
+                  width: '100%',
+                  left: '50%',
+                  top: 0,
+                  opacity,
+                  transform: `translate(-50%, ${position}px) scale(${scale})`,
+                  fontSize: `${fontSize}px`,
+                  fontFamily: "'Montserrat', 'Circular', -apple-system, BlinkMacSystemFont, sans-serif",
+                  fontWeight: 400, // Keep constant font weight
+                  textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                  whiteSpace: 'pre-wrap',
+                  letterSpacing: '0',
+                  userSelect: 'none',
+                  zIndex: 100 - Math.abs(activeLyricIndex - index),
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
                 }}
               >
-                <span style={{ color }}>{lyric.text}</span>
+                <div
+                  style={{
+                    position: 'relative',
+                    display: 'inline-block',
+                    maxWidth: '90%',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <span style={{ color }}>{lyric.text}</span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      {/* Subtle vignette effect */}
+      {/* Overlay effects layer */}
       <div
         style={{
           position: 'absolute',
@@ -326,8 +374,10 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
           bottom: 0,
           boxShadow: 'inset 0 0 150px rgba(0, 0, 0, 0.7)',
           pointerEvents: 'none',
+          zIndex: 3,
         }}
       />
+
     </AbsoluteFill>
   );
 };
