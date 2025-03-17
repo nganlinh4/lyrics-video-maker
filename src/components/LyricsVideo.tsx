@@ -159,13 +159,14 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
   return (
     <AbsoluteFill
       style={{
-        background: backgroundImageUrl 
+        // Replace the background shorthand with individual properties
+        backgroundColor: '#000',
+        backgroundImage: backgroundImageUrl 
           ? `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url(${backgroundImageUrl})` 
           : 'linear-gradient(180deg, #121212 0%, #060606 100%)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        backgroundColor: '#000',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
