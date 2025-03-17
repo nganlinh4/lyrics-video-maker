@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { AbsoluteFill, useCurrentFrame, interpolate, Audio, useVideoConfig, Easing } from 'remotion';
 import { LyricEntry, Props } from '../types';
 
@@ -23,6 +23,33 @@ const interpolateColor = (progress: number, from: number[], to: number[]) => {
   const g = interpolate(progress, [0, 1], [from[1], to[1]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const b = interpolate(progress, [0, 1], [from[2], to[2]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+};
+
+// Utility function to get average color from an image
+const getAverageColor = (imgElement: HTMLImageElement): number[] => {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (!context) return [30, 215, 96]; // Fallback to default green
+
+  canvas.width = imgElement.width;
+  canvas.height = imgElement.height;
+  context.drawImage(imgElement, 0, 0);
+
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height).data;
+  let r = 0, g = 0, b = 0, count = 0;
+
+  for (let i = 0; i < imageData.length; i += 4) {
+    r += imageData[i];
+    g += imageData[i + 1];
+    b += imageData[i + 2];
+    count++;
+  }
+
+  return [
+    Math.round(r / count),
+    Math.round(g / count),
+    Math.round(b / count)
+  ];
 };
 
 export const LyricsComponent: React.FC<{ lyrics: LyricEntry[] }> = ({ lyrics }) => {
@@ -70,33 +97,72 @@ export const LyricsComponent: React.FC<{ lyrics: LyricEntry[] }> = ({ lyrics }) 
   );
 };
 
-const ParticleBackground: React.FC = () => {
+const ParticleBackground: React.FC<{ albumArtUrl?: string }> = ({ albumArtUrl }) => {
   const { width, height, fps } = useVideoConfig();
   const frame = useCurrentFrame();
-  const particleCount = 50;
+  const particleCount = 45;
+
+  // Get average color from album art
+  const [accentColor, setAccentColor] = useState<number[]>([30, 215, 96]); // Default to Spotify green
+
+  useEffect(() => {
+    if (albumArtUrl) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const color = getAverageColor(img);
+        setAccentColor(color);
+      };
+      img.src = albumArtUrl;
+    }
+  }, [albumArtUrl]);
+  
+  const particles = useMemo(() => {
+    return Array.from({ length: particleCount }).map(() => ({
+      size: 3 + Math.random() * 8,
+      speedX: 0.1 + Math.random() * 0.4,
+      speedY: 0.1 + Math.random() * 0.4,
+      phaseX: Math.random() * Math.PI * 2,
+      phaseY: Math.random() * Math.PI * 2,
+      baseX: Math.random() * width,
+      baseY: Math.random() * height,
+      amplitudeX: 10 + Math.random() * 40,
+      amplitudeY: 10 + Math.random() * 40,
+      opacitySpeed: 0.1 + Math.random() * 0.3,
+      opacityPhase: Math.random() * Math.PI * 2,
+      isAccent: Math.random() < 0.25, // 25% chance of using accent color
+      glowSize: 10 + Math.random() * 15,
+      glowOpacity: 0.2 + Math.random() * 0.3,
+    }));
+  }, [width, height]);
   
   return (
     <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
-      {Array.from({ length: particleCount }).map((_, i) => {
-        const size = 3 + Math.random() * 6;
-        const speed = 0.2 + Math.random() * 0.5;
-        const baseX = (i / particleCount) * width;
-        const x = baseX + Math.sin((frame / fps) * speed + i) * 50;
-        const y = height * 0.1 + (Math.sin((frame / fps) * speed + i * 2) + 1) * height * 0.4;
-        const opacity = 0.1 + Math.random() * 0.2;
+      {particles.map((particle, i) => {
+        const x = particle.baseX + 
+          Math.sin((frame / fps) * particle.speedX + particle.phaseX) * particle.amplitudeX;
+        const y = particle.baseY + 
+          Math.sin((frame / fps) * particle.speedY + particle.phaseY) * particle.amplitudeY;
+        
+        const opacity = 0.3 + 
+          Math.sin((frame / fps) * particle.opacitySpeed + particle.opacityPhase) * 0.2;
+
+        const [r, g, b] = accentColor;
         
         return (
           <div
             key={i}
             style={{
               position: 'absolute',
-              width: `${size}px`,
-              height: `${size}px`,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
               borderRadius: '50%',
-              backgroundColor: i % 5 === 0 ? 'rgb(30, 215, 96)' : 'white',
+              backgroundColor: particle.isAccent ? `rgb(${r}, ${g}, ${b})` : 'white',
               opacity,
               transform: `translate(${x}px, ${y}px)`,
-              boxShadow: i % 5 === 0 ? '0 0 10px 2px rgba(30, 215, 96, 0.3)' : 'none',
+              boxShadow: particle.isAccent 
+                ? `0 0 ${particle.glowSize}px ${particle.glowSize/2}px rgba(${r}, ${g}, ${b}, ${particle.glowOpacity})` 
+                : `0 0 ${particle.glowSize}px ${particle.glowSize/2}px rgba(255, 255, 255, ${particle.glowOpacity})`,
             }}
           />
         );
@@ -179,7 +245,7 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
 
   // Album cover floating animation
   const albumCoverOffset = useMemo(() => {
-    return Math.sin(frame / (fps * 2) * Math.PI) * 5; // 5px movement over 4 seconds
+    return Math.sin(frame / (fps * 5) * Math.PI) * 5; // 5px movement over 4 seconds
   }, [frame, fps]);
 
   // Background pulse effect
@@ -218,7 +284,7 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
       }}
     >
       {/* Base layer */}
-      <ParticleBackground />
+      <ParticleBackground albumArtUrl={albumArtUrl} />
       {audioUrl && <Audio src={audioUrl} />}
 
       {/* Background effects layer */}
