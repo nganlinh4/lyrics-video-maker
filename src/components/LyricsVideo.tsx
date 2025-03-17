@@ -11,7 +11,7 @@ const LYRIC_MARGIN = 24; // Spacing between lines
 const TRANSITION_DURATION = 0.5; // Duration in seconds for lyric transitions
 const BASE_POSITION = 720 / 2 - 30; // Center position (adjusted from height / 2 + CENTER_OFFSET)
 const ALBUM_COVER_SIZE = 300; // Size of the album cover
-const ALBUM_COVER_MARGIN = 40; // Margin from the left edge
+const ALBUM_COVER_MARGIN = 110; // Increased margin from the left edge
 
 // New styling constants
 const INACTIVE_FONT_SIZE = 36;
@@ -262,7 +262,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
     }
   }, [activeLyricIndex, currentTimeInSeconds, lyrics]);
 
-  // Album cover floating animation
+  // Abum cover floating animation
   const albumCoverOffset = useMemo(() => {
     return Math.sin(frame / (fps * 5) * Math.PI) * 5; // 5px movement over 4 seconds
   }, [frame, fps]);
@@ -386,7 +386,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
             textAlign: 'center',
             height: '100%',
             position: 'relative',
-            marginLeft: ALBUM_COVER_SIZE + ALBUM_COVER_MARGIN * 2,
+            marginLeft: 400, // Direct value instead of using a constant
           }}
         >
           {lyrics?.map((lyric: LyricEntry, index: number) => {
