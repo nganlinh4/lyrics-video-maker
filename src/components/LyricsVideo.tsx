@@ -250,7 +250,7 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
 
   // Background pulse effect
   const backgroundPulse = useMemo(() => {
-    return interpolate(Math.sin(frame / fps * 2 * Math.PI), [-1, 1], [0.03, 0.06]);
+    return interpolate(Math.sin(frame / fps * 0.2 * Math.PI), [-1, 1], [0.03, 0.06]);
   }, [frame, fps]);
 
   // Calculate transition progress for each lyric
@@ -272,7 +272,7 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
       style={{
         backgroundColor: '#000',
         backgroundImage: backgroundImageUrl 
-          ? `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url(${backgroundImageUrl})` 
+          ? `linear-gradient(rgba(0, 0, 0, ${0.7 + backgroundPulse}), rgba(0, 0, 0, ${0.8 + backgroundPulse})), url(${backgroundImageUrl})` 
           : 'linear-gradient(180deg, #121212 0%, #060606 100%)',
         backgroundSize: 'cover',
         backgroundPosition: `calc(50% + ${parallaxOffset}px) center`,
