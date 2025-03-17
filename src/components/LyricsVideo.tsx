@@ -1,6 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { AbsoluteFill, useCurrentFrame, interpolate, Audio, useVideoConfig, Easing } from 'remotion';
-import { LyricEntry, Props } from '../types';
+import { LyricEntry } from '../types';
+
+// Font-related constants
+const FONT_FAMILY = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
 
 // Spotify-inspired constants
 const LYRIC_HEIGHT = 65; // Height of each lyric line
@@ -15,7 +18,9 @@ const INACTIVE_FONT_SIZE = 36;
 const ACTIVE_FONT_SIZE = 40;
 const INACTIVE_COLOR = [255, 255, 255];
 const ACTIVE_COLOR = [30, 215, 96];
-// Removed INACTIVE_FONT_WEIGHT and ACTIVE_FONT_WEIGHT
+// Font weight variation constants
+const INACTIVE_WEIGHT = 400;  // normal
+const ACTIVE_WEIGHT = 700;    // bold
 
 // Function to interpolate RGB colors
 const interpolateColor = (progress: number, from: number[], to: number[]) => {
@@ -60,7 +65,7 @@ export const LyricsComponent: React.FC<{ lyrics: LyricEntry[] }> = ({ lyrics }) 
   return (
     <div>
       <link
-        href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;1,400&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet"
       />
       {lyrics.map((lyric, index) => {
@@ -82,11 +87,11 @@ export const LyricsComponent: React.FC<{ lyrics: LyricEntry[] }> = ({ lyrics }) 
             key={index}
             style={{
               fontFamily: 'Montserrat',
-              fontWeight: 400, // Keep constant font weight
-              maxWidth: '800px', // Add this to limit line width
-              margin: '0 auto', // Center the text if it's shorter than maxWidth
-              whiteSpace: 'pre-wrap', // Handle line breaks properly
-              wordWrap: 'break-word', // Break long words if necessary
+              fontWeight: 400,
+              maxWidth: '800px',
+              margin: '0 auto',
+              whiteSpace: 'pre-wrap',
+              wordWrap: 'break-word',
             }}
           >
             {lyric.text}
@@ -171,7 +176,21 @@ const ParticleBackground: React.FC<{ albumArtUrl?: string }> = ({ albumArtUrl })
   );
 };
 
-export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl }) => {
+export interface Props {
+  audioUrl: string;
+  lyrics: LyricEntry[];
+  durationInSeconds: number;
+  albumArtUrl?: string;
+  backgroundImageUrl?: string;
+}
+
+export const LyricsVideoContent: React.FC<Props> = ({ 
+  audioUrl, 
+  lyrics, 
+  durationInSeconds, 
+  albumArtUrl, 
+  backgroundImageUrl 
+}) => {
   const frame = useCurrentFrame();
   const { fps, height, width } = useVideoConfig();
   const currentTimeInSeconds = frame / fps;
@@ -283,6 +302,11 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
         overflow: 'hidden',
       }}
     >
+      <link 
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" 
+        rel="stylesheet" 
+      />
+      
       {/* Base layer */}
       <ParticleBackground albumArtUrl={albumArtUrl} />
       {audioUrl && <Audio src={audioUrl} />}
@@ -386,8 +410,12 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
               extrapolateRight: 'clamp',
             });
 
+            const fontWeight = interpolate(progress, [0, 1], [INACTIVE_WEIGHT, ACTIVE_WEIGHT], {
+              extrapolateLeft: 'clamp',
+              extrapolateRight: 'clamp',
+            });
+
             const color = interpolateColor(progress, INACTIVE_COLOR, ACTIVE_COLOR);
-            // Removed fontWeight calculation
 
             return (
               <div
@@ -400,8 +428,8 @@ export const LyricsVideoContent: React.FC<Props> = ({ audioUrl, lyrics, duration
                   opacity,
                   transform: `translate(-50%, ${position}px) scale(${scale})`,
                   fontSize: `${fontSize}px`,
-                  fontFamily: "'Montserrat', 'Circular', -apple-system, BlinkMacSystemFont, sans-serif",
-                  fontWeight: 400, // Keep constant font weight
+                  fontFamily: FONT_FAMILY,
+                  fontWeight,
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                   whiteSpace: 'pre-wrap',
                   letterSpacing: '0',
