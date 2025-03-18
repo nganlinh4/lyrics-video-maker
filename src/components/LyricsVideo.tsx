@@ -1,11 +1,15 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { AbsoluteFill, useCurrentFrame, interpolate, Audio, useVideoConfig, Easing } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, interpolate, Audio, useVideoConfig, Easing, continueRender, delayRender, Sequence } from 'remotion';
 import { LyricEntry, VideoMetadata } from '../types';
-import styled from 'styled-components';
+import styled, { ThemeProvider } from 'styled-components';
 import { useAudioAnalyzer, getAnalysisUrl } from '../utils/audioAnalyzer';
+import { loadFont } from '@remotion/google-fonts/Inter';
+
+// Load Inter font variations
+const { fontFamily, waitUntilDone } = loadFont();
 
 // Font-related constants
-export const FONT_FAMILY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif";
+export const FONT_FAMILY = fontFamily;
 
 // Spotify-inspired constants (scaled up by 1.5 for 1080p)
 const LYRIC_HEIGHT = 98; // Increased from 65
@@ -28,11 +32,19 @@ const BACKGROUND_HORIZONTAL_RANGE = 20; // pixels of horizontal movement
 const BACKGROUND_VERTICAL_RANGE = 15; // pixels of vertical movement
 const BACKGROUND_ZOOM_RANGE = 0.1; // 10% zoom range
 
-// Utility function to get average color from an image
-const getAverageColor = (imgElement: HTMLImageElement): number[] => {
+// Function to brighten a color
+const brightenColor = (color: number[], factor: number = 3): number[] => {
+  return color.map(c => Math.min(255, Math.round(c * factor)));
+};
+
+// Updated getAverageColor function to return both normal and bright versions
+const getAverageColor = (imgElement: HTMLImageElement): { normal: number[], bright: number[] } => {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  if (!context) return [30, 215, 96]; // Fallback to default green
+  if (!context) return { 
+    normal: [30, 215, 96],
+    bright: [45, 255, 144]
+  };
 
   canvas.width = imgElement.width;
   canvas.height = imgElement.height;
@@ -48,11 +60,16 @@ const getAverageColor = (imgElement: HTMLImageElement): number[] => {
     count++;
   }
 
-  return [
+  const normalColor = [
     Math.round(r / count),
     Math.round(g / count),
     Math.round(b / count)
   ];
+
+  return {
+    normal: normalColor,
+    bright: brightenColor(normalColor)
+  };
 };
 
 // Function to interpolate RGB colors
@@ -94,6 +111,14 @@ export const LyricsVideoContent: React.FC<Props> = ({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const currentTimeInSeconds = frame / fps;
+
+  const [handle] = useState(() => delayRender());
+
+  useEffect(() => {
+    waitUntilDone().then(() => {
+      continueRender(handle);
+    });
+  }, [handle]);
 
   const getAudioConfig = useCallback(() => {
     // Return appropriate audio configuration based on video type
@@ -137,15 +162,18 @@ export const LyricsVideoContent: React.FC<Props> = ({
   ), [metadata.artist, metadata.songTitle]);
 
   // Move accentColor state up to parent component
-  const [accentColor, setAccentColor] = useState<number[]>([30, 215, 96]); // Default to Spotify green
+  const [accentColor, setAccentColor] = useState<{ normal: number[], bright: number[] }>({
+    normal: [30, 215, 96],
+    bright: [45, 255, 144]
+  });
 
   useEffect(() => {
     if (albumArtUrl) {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
-        const color = getAverageColor(img);
-        setAccentColor(color);
+        const colors = getAverageColor(img);
+        setAccentColor(colors);
       };
       img.src = albumArtUrl;
     }
@@ -374,218 +402,220 @@ export const LyricsVideoContent: React.FC<Props> = ({
   };
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: '#000',
-        overflow: 'hidden',
-        position: 'relative'
-      }}
-    >
-      {/* Background container with effects */}
-      <div style={{
-        position: 'absolute',
-        top: -50,  // Extra padding to prevent edges showing during animation
-        left: -50,
-        right: -50,
-        bottom: -50,
-        backgroundImage: backgroundImageUrl 
-          ? `linear-gradient(rgba(0, 0, 0, ${0.4 + backgroundPulse}), rgba(0, 0, 0, ${0.5 + backgroundPulse})), url(${backgroundImageUrl})` 
-          : 'linear-gradient(180deg, #121212 0%, #060606 100%)',
-        backgroundSize: 'cover',
-        ...backgroundEffects,
-      }} />
-
-      {/* Rest of the content */}
-      <div
+    <ThemeProvider theme={{ accentColor }}>
+      <AbsoluteFill
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backdropFilter: `blur(${2 + audioReactiveEffect * 8}px)`,
-          backgroundColor: 'rgba(0, 0, 0, 0.2)',
-          zIndex: 1,
+          backgroundColor: '#000',
+          overflow: 'hidden',
+          position: 'relative'
         }}
-      />
+      >
+        {/* Background container with effects */}
+        <div style={{
+          position: 'absolute',
+          top: -50,  // Extra padding to prevent edges showing during animation
+          left: -50,
+          right: -50,
+          bottom: -50,
+          backgroundImage: backgroundImageUrl 
+            ? `linear-gradient(rgba(0, 0, 0, ${0.4 + backgroundPulse}), rgba(0, 0, 0, ${0.5 + backgroundPulse})), url(${backgroundImageUrl})` 
+            : 'linear-gradient(180deg, #121212 0%, #060606 100%)',
+          backgroundSize: 'cover',
+          ...backgroundEffects,
+        }} />
 
-      {/* Content layer */}
-      <div style={{ position: 'relative', width: '100%', height: '100%', zIndex: 2 }}>
-        {/* Centered Metadata above album art */}
-        <CenteredMetadataContainer>
-          <ArtistName>{metadata.artist}</ArtistName>
-          <SongTitle>{metadata.songTitle}</SongTitle>
-        </CenteredMetadataContainer>
-
-        {/* Album Cover with Video Type below it */}
-        <AlbumCoverContainer>
-          <div
-            style={{
-              position: 'relative',
-              width: ALBUM_COVER_SIZE,
-              height: ALBUM_COVER_SIZE,
-              backgroundColor: 'rgba(30, 30, 30, 0.6)',
-              borderRadius: '24px',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-              transform: `translateY(${albumCoverOffset}px)`,
-            }}
-          >
-            {albumArtUrl ? (
-              <img
-                src={albumArtUrl}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
-                }}
-                alt="Album Art"
-              />
-            ) : (
-              <>
-                <div style={{
-                    width: '100%',
-                    height: '100%',
-                    background: `linear-gradient(45deg, 
-                      rgba(40, 40, 40, 0.6) 25%, 
-                      rgba(60, 60, 60, 0.6) 25%, 
-                      rgba(60, 60, 60, 0.6) 50%, 
-                      rgba(40, 40, 40, 0.6) 50%, 
-                      rgba(40, 40, 40, 0.6) 75%, 
-                      rgba(60, 60, 60, 0.6) 75%)`,
-                    backgroundSize: '40px 40px',
-                    opacity: 0.8,
-                  }}
-                 />
-                <div style={{position: 'absolute', fontSize: '80px', color: 'rgba(255, 255, 255, 0.3)'}}>♪</div>
-              </>
-            )}
-          </div>
-          <VideoTypeLabel>{metadata.videoType}</VideoTypeLabel>
-          <AudioVisualizer timeInSeconds={currentTimeInSeconds} />
-        </AlbumCoverContainer>
-
-        {/* Lyrics Container */}
+        {/* Rest of the content */}
         <div
           style={{
-            width: '85%',
-            maxWidth: '1350px', // Increased from 900
-            textAlign: 'center',
-            height: '100%',
-            position: 'relative',
-            marginLeft: 590, // Increased from 400
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backdropFilter: `blur(${2 + audioReactiveEffect * 8}px)`,
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            zIndex: 1,
           }}
-        >
-          {lyrics?.map((lyric: LyricEntry, index: number) => {
-            const progress = getLyricProgress(lyric, currentTimeInSeconds);
-            const naturalPosition = index * (LYRIC_HEIGHT + LYRIC_MARGIN);
-            const position = naturalPosition - scrollOffset;
-            const distance = Math.abs(position - BASE_POSITION);
-            
-            const scale = interpolate(distance, [0, 150], [1.08, 0.92], {
-              extrapolateLeft: 'clamp',
-              extrapolateRight: 'clamp'
-            });
-            
-            const opacity = interpolate(distance, [0, 150, 350], [1, 0.3, 0], {
-              extrapolateLeft: 'clamp',
-              extrapolateRight: 'clamp'
-            });
+        />
 
-            const fontSize = interpolate(progress, [0, 1], [INACTIVE_FONT_SIZE, ACTIVE_FONT_SIZE], {
-              extrapolateLeft: 'clamp',
-              extrapolateRight: 'clamp',
-            });
+        {/* Content layer */}
+        <div style={{ position: 'relative', width: '100%', height: '100%', zIndex: 2 }}>
+          {/* Centered Metadata above album art */}
+          <CenteredMetadataContainer>
+            <ArtistName>{metadata.artist}</ArtistName>
+            <SongTitle>{metadata.songTitle}</SongTitle>
+          </CenteredMetadataContainer>
 
-            const fontWeight = interpolate(progress, [0, 1], [INACTIVE_WEIGHT, ACTIVE_WEIGHT], {
-              extrapolateLeft: 'clamp',
-              extrapolateRight: 'clamp',
-            });
-
-            const color = interpolateColor(progress, INACTIVE_COLOR, ACTIVE_COLOR);
-
-            return (
-              <div
-                key={index}
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  left: '50%',
-                  top: 0,
-                  opacity,
-                  transform: `translate(-50%, ${position}px) scale(${scale})`,
-                  fontSize: `${fontSize}px`,
-                  fontFamily: FONT_FAMILY,
-                  fontWeight,
-                  textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                  whiteSpace: 'pre-wrap',
-                  letterSpacing: '0',
-                  userSelect: 'none',
-                  zIndex: 100 - Math.abs(activeLyricIndex - index),
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                }}
-              >
-                <div
+          {/* Album Cover with Video Type below it */}
+          <AlbumCoverContainer>
+            <div
+              style={{
+                position: 'relative',
+                width: ALBUM_COVER_SIZE,
+                height: ALBUM_COVER_SIZE,
+                backgroundColor: 'rgba(30, 30, 30, 0.6)',
+                borderRadius: '24px',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                transform: `translateY(${albumCoverOffset}px)`,
+              }}
+            >
+              {albumArtUrl ? (
+                <img
+                  src={albumArtUrl}
                   style={{
-                    position: 'relative',
-                    display: 'inline-block',
-                    maxWidth: '90%',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    overflow: 'hidden',
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+                  }}
+                  alt="Album Art"
+                />
+              ) : (
+                <>
+                  <div style={{
+                      width: '100%',
+                      height: '100%',
+                      background: `linear-gradient(45deg, 
+                        rgba(40, 40, 40, 0.6) 25%, 
+                        rgba(60, 60, 60, 0.6) 25%, 
+                        rgba(60, 60, 60, 0.6) 50%, 
+                        rgba(40, 40, 40, 0.6) 50%, 
+                        rgba(40, 40, 40, 0.6) 75%, 
+                        rgba(60, 60, 60, 0.6) 75%)`,
+                      backgroundSize: '40px 40px',
+                      opacity: 0.8,
+                    }}
+                   />
+                  <div style={{position: 'absolute', fontSize: '80px', color: 'rgba(255, 255, 255, 0.3)'}}>♪</div>
+                </>
+              )}
+            </div>
+            <VideoTypeLabel>{metadata.videoType}</VideoTypeLabel>
+            <AudioVisualizer timeInSeconds={currentTimeInSeconds} />
+          </AlbumCoverContainer>
+
+          {/* Lyrics Container */}
+          <div
+            style={{
+              width: '85%',
+              maxWidth: '1350px', // Increased from 900
+              textAlign: 'center',
+              height: '100%',
+              position: 'relative',
+              marginLeft: 590, // Increased from 400
+            }}
+          >
+            {lyrics?.map((lyric: LyricEntry, index: number) => {
+              const progress = getLyricProgress(lyric, currentTimeInSeconds);
+              const naturalPosition = index * (LYRIC_HEIGHT + LYRIC_MARGIN);
+              const position = naturalPosition - scrollOffset;
+              const distance = Math.abs(position - BASE_POSITION);
+              
+              const scale = interpolate(distance, [0, 150], [1.08, 0.92], {
+                extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp'
+              });
+              
+              const opacity = interpolate(distance, [0, 150, 350], [1, 0.3, 0], {
+                extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp'
+              });
+
+              const fontSize = interpolate(progress, [0, 1], [INACTIVE_FONT_SIZE, ACTIVE_FONT_SIZE], {
+                extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp',
+              });
+
+              const fontWeight = interpolate(progress, [0, 1], [INACTIVE_WEIGHT, ACTIVE_WEIGHT], {
+                extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp',
+              });
+
+              const color = interpolateColor(progress, INACTIVE_COLOR, ACTIVE_COLOR);
+
+              return (
+                <div
+                  key={index}
+                  style={{
+                    position: 'absolute',
+                    width: '100%',
+                    left: '50%',
+                    top: 0,
+                    opacity,
+                    transform: `translate(-50%, ${position}px) scale(${scale})`,
+                    fontSize: `${fontSize}px`,
+                    fontFamily: FONT_FAMILY,
+                    fontWeight,
+                    textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                    whiteSpace: 'pre-wrap',
+                    letterSpacing: '0',
+                    userSelect: 'none',
+                    zIndex: 100 - Math.abs(activeLyricIndex - index),
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
                   }}
                 >
-                  <span style={{ color }}>{lyric.text}</span>
+                  <div
+                    style={{
+                      position: 'relative',
+                      display: 'inline-block',
+                      maxWidth: '90%',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <span style={{ color }}>{lyric.text}</span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Add Audio components based on video type */}
-      {metadata.videoType === 'Little Vocal' ? (
-        littleVocalUrl ? (
-          // Use pre-mixed little vocal track if available
-          <Audio src={littleVocalUrl} volume={1} />
+        {/* Add Audio components based on video type */}
+        {metadata.videoType === 'Little Vocal' ? (
+          littleVocalUrl ? (
+            // Use pre-mixed little vocal track if available
+            <Audio src={littleVocalUrl} volume={1} />
+          ) : (
+            // Otherwise mix instrumental and vocal
+            <>
+              {instrumentalUrl && <Audio src={instrumentalUrl} volume={1} />}
+              {vocalUrl && <Audio src={vocalUrl} volume={0.12} />}
+            </>
+          )
+        ) : metadata.videoType === 'Vocal Only' ? (
+          <Audio src={vocalUrl || audioUrl} volume={1} />
+        ) : metadata.videoType === 'Instrumental Only' ? (
+          <Audio src={instrumentalUrl || audioUrl} volume={1} />
         ) : (
-          // Otherwise mix instrumental and vocal
-          <>
-            {instrumentalUrl && <Audio src={instrumentalUrl} volume={1} />}
-            {vocalUrl && <Audio src={vocalUrl} volume={0.12} />}
-          </>
-        )
-      ) : metadata.videoType === 'Vocal Only' ? (
-        <Audio src={vocalUrl || audioUrl} volume={1} />
-      ) : metadata.videoType === 'Instrumental Only' ? (
-        <Audio src={instrumentalUrl || audioUrl} volume={1} />
-      ) : (
-        // Default Lyrics Video case
-        <Audio src={audioUrl} volume={1} />
-      )}
+          // Default Lyrics Video case
+          <Audio src={audioUrl} volume={1} />
+        )}
 
-      {/* Overlay effects layer */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          boxShadow: 'inset 0 0 150px rgba(0, 0, 0, 0.7)',
-          pointerEvents: 'none',
-          zIndex: 3,
-        }}
-      />
+        {/* Overlay effects layer */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            boxShadow: 'inset 0 0 150px rgba(0, 0, 0, 0.7)',
+            pointerEvents: 'none',
+            zIndex: 3,
+          }}
+        />
 
-    </AbsoluteFill>
+      </AbsoluteFill>
+    </ThemeProvider>
   );
 };
 
@@ -644,4 +674,20 @@ const SongTitle = styled.h1`
   margin: 5px 0;
   font-weight: 700;
   font-family: ${FONT_FAMILY};
+  background: ${props => `linear-gradient(135deg, 
+    rgb(${props.theme.accentColor.normal.join(',')}) 0%, 
+    rgb(${props.theme.accentColor.bright.join(',')}) 50%,
+    rgb(${props.theme.accentColor.normal.join(',')}) 100%)`};
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  animation: shine 12s ease-in-out infinite;
+  background-size: 200% auto;
+  
+  @keyframes shine {
+    0% { background-position: -200% center; }
+    50% { background-position: 200% center; }
+    100% { background-position: -200% center; }
+  }
 `;

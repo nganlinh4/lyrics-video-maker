@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@remotion/bundler": "4.0.278",
+    "@remotion/google-fonts": "^4.0.278",
     "@remotion/player": "4.0.278",
     "@remotion/renderer": "4.0.278",
     "@testing-library/jest-dom": "6.6.3",
