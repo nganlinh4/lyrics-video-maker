@@ -54,7 +54,22 @@ app.post('/upload/:type', upload.single('file'), (req, res) => {
 // Render video endpoint
 app.post('/render', async (req, res) => {
   try {
-    const { audioFile, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl } = req.body;
+    const { 
+      audioFile, 
+      lyrics, 
+      durationInSeconds, 
+      albumArtUrl, 
+      backgroundImageUrl, 
+      metadata = {
+        artist: 'Unknown Artist',
+        songTitle: 'Unknown Song',
+        videoType: 'Lyrics Video'
+      },
+      instrumentalUrl,
+      vocalUrl,
+      littleVocalUrl
+    } = req.body;
+    
     if (!audioFile || !lyrics || !durationInSeconds) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
@@ -94,7 +109,11 @@ app.post('/render', async (req, res) => {
         lyrics,
         durationInSeconds,
         albumArtUrl,
-        backgroundImageUrl
+        backgroundImageUrl,
+        metadata,
+        instrumentalUrl,
+        vocalUrl,
+        littleVocalUrl
       }
     });
     console.log('Available compositions:', compositions.map(c => c.id));
@@ -107,7 +126,11 @@ app.post('/render', async (req, res) => {
         lyrics,
         durationInSeconds,
         albumArtUrl,
-        backgroundImageUrl
+        backgroundImageUrl,
+        metadata,
+        instrumentalUrl,
+        vocalUrl,
+        littleVocalUrl
       },
     });
 
@@ -128,7 +151,11 @@ app.post('/render', async (req, res) => {
         lyrics,
         durationInSeconds,
         albumArtUrl,
-        backgroundImageUrl
+        backgroundImageUrl,
+        metadata,
+        instrumentalUrl,
+        vocalUrl,
+        littleVocalUrl
       },
       chromiumOptions: {
         disableWebSecurity: true,

@@ -2,6 +2,7 @@ import React from 'react';
 import { Composition } from 'remotion';
 // Import the better styled component instead of the basic one
 import { LyricsVideoContent } from '../components/LyricsVideo';
+import { VideoMetadata } from '../types';
 
 const sampleLyrics = [
   { start: 0, end: 2, text: "Welcome to" },
@@ -12,6 +13,13 @@ const sampleLyrics = [
 // For the sample preview mode, we'll use a short duration
 const SAMPLE_DURATION_SECONDS = 10;
 // For rendering, we'll use the actual duration passed in props
+
+// Default metadata to use in preview mode
+const DEFAULT_METADATA: VideoMetadata = {
+  artist: 'Preview Artist',
+  songTitle: 'Preview Song',
+  videoType: 'Lyrics Video'
+};
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -28,7 +36,8 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{
           audioUrl: '', // No audio in preview mode
           lyrics: sampleLyrics,
-          durationInSeconds: SAMPLE_DURATION_SECONDS
+          durationInSeconds: SAMPLE_DURATION_SECONDS,
+          metadata: DEFAULT_METADATA // Add the required metadata
         }}
       />
     </>

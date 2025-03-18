@@ -1,6 +1,7 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { AbsoluteFill, useCurrentFrame, interpolate, Audio, useVideoConfig, Easing } from 'remotion';
-import { LyricEntry } from '../types';
+import { LyricEntry, VideoMetadata } from '../types';
+import styled from 'styled-components';
 
 // Font-related constants
 const FONT_FAMILY = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
@@ -102,26 +103,14 @@ export const LyricsComponent: React.FC<{ lyrics: LyricEntry[] }> = ({ lyrics }) 
   );
 };
 
-const ParticleBackground: React.FC<{ albumArtUrl?: string }> = ({ albumArtUrl }) => {
+const ParticleBackground: React.FC<{ 
+  albumArtUrl?: string;
+  accentColor: number[];
+}> = ({ albumArtUrl, accentColor }) => {
   const { width, height, fps } = useVideoConfig();
   const frame = useCurrentFrame();
   const particleCount = 45;
 
-  // Get average color from album art
-  const [accentColor, setAccentColor] = useState<number[]>([30, 215, 96]); // Default to Spotify green
-
-  useEffect(() => {
-    if (albumArtUrl) {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        const color = getAverageColor(img);
-        setAccentColor(color);
-      };
-      img.src = albumArtUrl;
-    }
-  }, [albumArtUrl]);
-  
   const particles = useMemo(() => {
     return Array.from({ length: particleCount }).map(() => ({
       size: 3 + Math.random() * 8,
@@ -182,18 +171,86 @@ export interface Props {
   durationInSeconds: number;
   albumArtUrl?: string;
   backgroundImageUrl?: string;
+  metadata: VideoMetadata;
+  instrumentalUrl?: string;
+  vocalUrl?: string;
+  littleVocalUrl?: string; // Added new option for pre-mixed Little Vocal audio
 }
 
-export const LyricsVideoContent: React.FC<Props> = ({ 
-  audioUrl, 
-  lyrics, 
-  durationInSeconds, 
-  albumArtUrl, 
-  backgroundImageUrl 
+interface AudioConfig {
+  src: string;
+  volume: number;
+}
+
+export const LyricsVideoContent: React.FC<Props> = ({
+  audioUrl,
+  instrumentalUrl,
+  vocalUrl,
+  littleVocalUrl,
+  lyrics,
+  durationInSeconds,
+  albumArtUrl,
+  backgroundImageUrl,
+  metadata
 }) => {
   const frame = useCurrentFrame();
-  const { fps, height, width } = useVideoConfig();
+  const { fps } = useVideoConfig();
   const currentTimeInSeconds = frame / fps;
+
+
+  const getAudioConfig = useCallback(() => {
+    // Only return audio configs if the URL is available
+    switch (metadata.videoType) {
+      case 'Lyrics Video':
+        return audioUrl ? [{ src: audioUrl, volume: 1 }] : [];
+      
+      case 'Vocal Only':
+        return vocalUrl ? [{ src: vocalUrl, volume: 1 }] : [];
+      
+      case 'Instrumental Only':
+        return instrumentalUrl ? [{ src: instrumentalUrl, volume: 1 }] : [];
+      
+      case 'Little Vocal':
+        // Use direct littleVocal audio file if available
+        if (littleVocalUrl) {
+          return [{ src: littleVocalUrl, volume: 1 }];
+        }
+        // Fall back to the previous mixing approach if littleVocalUrl is not available
+        if (instrumentalUrl && vocalUrl) {
+          return [
+            { src: instrumentalUrl, volume: 1 },
+            { src: vocalUrl, volume: 0.12 }
+          ];
+        }
+        return [];
+      
+      default:
+        return [];
+    }
+  }, [metadata.videoType, audioUrl, instrumentalUrl, vocalUrl, littleVocalUrl]);
+
+  // Memoize metadata component - move to above album art and center align
+  const MetadataDisplay = useMemo(() => (
+    <MetadataContainer>
+      <ArtistName>{metadata.artist}</ArtistName>
+      <SongTitle>{metadata.songTitle}</SongTitle>
+    </MetadataContainer>
+  ), [metadata.artist, metadata.songTitle]);
+
+  // Move accentColor state up to parent component
+  const [accentColor, setAccentColor] = useState<number[]>([30, 215, 96]); // Default to Spotify green
+
+  useEffect(() => {
+    if (albumArtUrl) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const color = getAverageColor(img);
+        setAccentColor(color);
+      };
+      img.src = albumArtUrl;
+    }
+  }, [albumArtUrl]);
 
   // Audio reactivity effect
   const audioReactiveEffect = useMemo(() => {
@@ -308,8 +365,18 @@ export const LyricsVideoContent: React.FC<Props> = ({
       />
       
       {/* Base layer */}
-      <ParticleBackground albumArtUrl={albumArtUrl} />
-      {audioUrl && <Audio src={audioUrl} />}
+      <ParticleBackground albumArtUrl={albumArtUrl} accentColor={accentColor} />
+      
+      {/* Audio elements */}
+      {getAudioConfig().map((audio: AudioConfig, index: number) => (
+        <Audio 
+          key={`audio-${metadata.videoType}-${audio.src}-${index}`}
+          src={audio.src}
+          volume={audio.volume}
+          playbackRate={1}
+          muted={false}
+        />
+      ))}
 
       {/* Background effects layer */}
       <div
@@ -327,56 +394,63 @@ export const LyricsVideoContent: React.FC<Props> = ({
 
       {/* Content layer */}
       <div style={{ position: 'relative', width: '100%', height: '100%', zIndex: 2 }}>
-        {/* Album Cover */}
-        <div
-          style={{
-            position: 'absolute',
-            left: ALBUM_COVER_MARGIN,
-            top: `calc(50% - ${ALBUM_COVER_SIZE / 2}px)`,
-            transform: `translateY(${albumCoverOffset}px)`,
-            width: ALBUM_COVER_SIZE,
-            height: ALBUM_COVER_SIZE,
-            backgroundColor: 'rgba(30, 30, 30, 0.6)',
-            borderRadius: '8px',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-          }}
-        >
-          {albumArtUrl ? (
-            <img
-              src={albumArtUrl}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
-              }}
-              alt="Album Art"
-            />
-          ) : (
-            <>
-              <div style={{
+        {/* Centered Metadata above album art */}
+        <CenteredMetadataContainer>
+          <ArtistName>{metadata.artist}</ArtistName>
+          <SongTitle>{metadata.songTitle}</SongTitle>
+        </CenteredMetadataContainer>
+
+        {/* Album Cover with Video Type below it */}
+        <AlbumCoverContainer>
+          <div
+            style={{
+              position: 'relative',
+              width: ALBUM_COVER_SIZE,
+              height: ALBUM_COVER_SIZE,
+              backgroundColor: 'rgba(30, 30, 30, 0.6)',
+              borderRadius: '8px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              transform: `translateY(${albumCoverOffset}px)`,
+            }}
+          >
+            {albumArtUrl ? (
+              <img
+                src={albumArtUrl}
+                style={{
                   width: '100%',
                   height: '100%',
-                  background: `linear-gradient(45deg, 
-                    rgba(40, 40, 40, 0.6) 25%, 
-                    rgba(60, 60, 60, 0.6) 25%, 
-                    rgba(60, 60, 60, 0.6) 50%, 
-                    rgba(40, 40, 40, 0.6) 50%, 
-                    rgba(40, 40, 40, 0.6) 75%, 
-                    rgba(60, 60, 60, 0.6) 75%)`,
-                  backgroundSize: '40px 40px',
-                  opacity: 0.8,
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
                 }}
-               />
-              <div style={{position: 'absolute', fontSize: '80px', color: 'rgba(255, 255, 255, 0.3)'}}>♪</div>
-            </>
-          )}
-        </div>
+                alt="Album Art"
+              />
+            ) : (
+              <>
+                <div style={{
+                    width: '100%',
+                    height: '100%',
+                    background: `linear-gradient(45deg, 
+                      rgba(40, 40, 40, 0.6) 25%, 
+                      rgba(60, 60, 60, 0.6) 25%, 
+                      rgba(60, 60, 60, 0.6) 50%, 
+                      rgba(40, 40, 40, 0.6) 50%, 
+                      rgba(40, 40, 40, 0.6) 75%, 
+                      rgba(60, 60, 60, 0.6) 75%)`,
+                    backgroundSize: '40px 40px',
+                    opacity: 0.8,
+                  }}
+                 />
+                <div style={{position: 'absolute', fontSize: '80px', color: 'rgba(255, 255, 255, 0.3)'}}>♪</div>
+              </>
+            )}
+          </div>
+          <VideoTypeLabel>{metadata.videoType}</VideoTypeLabel>
+        </AlbumCoverContainer>
 
         {/* Lyrics Container */}
         <div
@@ -475,3 +549,59 @@ export const LyricsVideoContent: React.FC<Props> = ({
     </AbsoluteFill>
   );
 };
+
+// Update styled components and add new ones
+const MetadataContainer = styled.div`
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 2;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+`;
+
+const CenteredMetadataContainer = styled.div`
+  position: absolute;
+  top: 20px;
+  left: ${ALBUM_COVER_MARGIN}px;
+  width: ${ALBUM_COVER_SIZE}px;
+  text-align: center;
+  z-index: 2;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+`;
+
+const AlbumCoverContainer = styled.div`
+  position: absolute;
+  left: ${ALBUM_COVER_MARGIN}px;
+  top: calc(50% - ${ALBUM_COVER_SIZE / 2}px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+`;
+
+const VideoTypeLabel = styled.div`
+  color: white;
+  font-family: ${FONT_FAMILY};
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 6px 15px;
+  border-radius: 6px;
+`;
+
+const ArtistName = styled.h2`
+  font-size: 24px;
+  margin: 0;
+  font-weight: 600;
+  opacity: 0.9;
+`;
+
+const SongTitle = styled.h1`
+  font-size: 32px;
+  margin: 5px 0;
+  font-weight: 700;
+`;

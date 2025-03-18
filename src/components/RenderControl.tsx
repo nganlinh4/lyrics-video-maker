@@ -65,6 +65,11 @@ interface Props {
   durationInSeconds: number;
   albumArtFile: File | null;
   backgroundFile: File | null;
+  metadata: {
+    artist: string;
+    songTitle: string;
+    videoType: 'Lyrics Video' | 'Vocal Only' | 'Instrumental Only' | 'Little Vocal';
+  };
   onRenderComplete: (videoPath: string) => void;
 }
 
@@ -74,6 +79,7 @@ export const RenderControl: React.FC<Props> = ({
   durationInSeconds,
   albumArtFile,
   backgroundFile,
+  metadata,
   onRenderComplete
 }) => {
   const [isRendering, setIsRendering] = useState(false);
@@ -102,7 +108,8 @@ export const RenderControl: React.FC<Props> = ({
         durationInSeconds, // Pass the actual audio duration
         {
           albumArtUrl: albumArtFile ? URL.createObjectURL(albumArtFile) : undefined,
-          backgroundImageUrl: backgroundFile ? URL.createObjectURL(backgroundFile) : undefined
+          backgroundImageUrl: backgroundFile ? URL.createObjectURL(backgroundFile) : undefined,
+          metadata // Pass the metadata to the rendering service
         },
         (progress) => {
           if (progress.status === 'error') {

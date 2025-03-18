@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { LyricEntry } from '../types';
 import VideoPreview from './VideoPreview';
+import { Input, Select, InputLabel } from './StyledComponents';
 
 const FormContainer = styled.div`
   max-width: 800px;
@@ -16,13 +17,6 @@ const Section = styled.div`
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #eee;
-`;
-
-const InputLabel = styled.label`
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
-  color: #333;
 `;
 
 const FileInput = styled.input`
@@ -126,13 +120,35 @@ const ErrorMessage = styled.div`
   border-left: 4px solid #e53935;
 `;
 
+interface AudioFiles {
+  main: File | null;
+  instrumental: File | null;
+  vocal: File | null;
+  littleVocal: File | null;
+}
+
+interface VideoMetadata {
+  artist: string;
+  songTitle: string;
+  videoType: 'Lyrics Video' | 'Vocal Only' | 'Instrumental Only' | 'Little Vocal';
+}
+
 interface UploadFormProps {
-  onFilesChange: (audioFile: File | null, lyrics: LyricEntry[] | null, albumArt: File | null, background: File | null) => void;
+  onFilesChange: (
+    audioFiles: AudioFiles,
+    lyrics: LyricEntry[] | null, 
+    albumArt: File | null, 
+    background: File | null,
+    metadata: VideoMetadata
+  ) => void;
   onVideoPathChange: (path: string) => void;
 }
 
 const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChange }) => {
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [mainAudioFile, setMainAudioFile] = useState<File | null>(null);
+  const [instrumentalFile, setInstrumentalFile] = useState<File | null>(null);
+  const [vocalFile, setVocalFile] = useState<File | null>(null);
+  const [littleVocalFile, setLittleVocalFile] = useState<File | null>(null);
   const [lyricsFile, setLyricsFile] = useState<File | null>(null);
   const [albumArtFile, setAlbumArtFile] = useState<File | null>(null);
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
@@ -140,22 +156,91 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<{[key: string]: boolean}>({});
   const [videoPath, setVideoPath] = useState<string | null>(null);
+  const [artist, setArtist] = useState('');
+  const [songTitle, setSongTitle] = useState('');
+  const [videoType, setVideoType] = useState<VideoMetadata['videoType']>('Lyrics Video');
   
-  const audioInputRef = useRef<HTMLInputElement>(null);
+  const mainAudioInputRef = useRef<HTMLInputElement>(null);
   const lyricsInputRef = useRef<HTMLInputElement>(null);
   const albumArtInputRef = useRef<HTMLInputElement>(null);
   const backgroundInputRef = useRef<HTMLInputElement>(null);
+  const instrumentalInputRef = useRef<HTMLInputElement>(null);
+  const vocalInputRef = useRef<HTMLInputElement>(null);
+  const littleVocalInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const updateFiles = () => {
+    const audioFiles: AudioFiles = {
+      main: mainAudioFile,
+      instrumental: instrumentalFile,
+      vocal: vocalFile,
+      littleVocal: littleVocalFile
+    };
+
+    const metadata: VideoMetadata = {
+      artist,
+      songTitle,
+      videoType
+    };
+
+    onFilesChange(audioFiles, lyrics, albumArtFile, backgroundFile, metadata);
+  };
+
+  const handleMetadataChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    
+    // Update the state based on which field changed
+    if (name === 'artist') {
+      setArtist(value);
+    } else if (name === 'songTitle') {
+      setSongTitle(value);
+    } else if (name === 'videoType') {
+      setVideoType(value as VideoMetadata['videoType']);
+    }
+
+    // Use a proper React effect instead of setTimeout to ensure state is updated
+    setTimeout(() => {
+      const metadata: VideoMetadata = {
+        artist: name === 'artist' ? value : artist,
+        songTitle: name === 'songTitle' ? value : songTitle,
+        videoType: name === 'videoType' ? value as VideoMetadata['videoType'] : videoType
+      };
+
+      onFilesChange(
+        { main: mainAudioFile, instrumental: instrumentalFile, vocal: vocalFile, littleVocal: littleVocalFile },
+        lyrics,
+        albumArtFile,
+        backgroundFile,
+        metadata
+      );
+    }, 0);
+  };
+
+  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'main' | 'instrumental' | 'vocal' | 'littleVocal') => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (!file.type.startsWith('audio/')) {
-        setError('Please upload a valid audio file (MP3, WAV, etc.)');
+        setError('Please upload a valid audio file (MP3, WAV)');
         return;
       }
-      setAudioFile(file);
+      
+      switch(type) {
+        case 'main':
+          setMainAudioFile(file);
+          break;
+        case 'instrumental':
+          setInstrumentalFile(file);
+          break;
+        case 'vocal':
+          setVocalFile(file);
+          break;
+        case 'littleVocal':
+          setLittleVocalFile(file);
+          break;
+      }
       setError(null);
-      onFilesChange(file, lyrics, albumArtFile, backgroundFile);
+      updateFiles(); // Make sure this is called after setting the file
     }
   };
 
@@ -167,24 +252,13 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       try {
         const text = await file.text();
         const parsedLyrics = JSON.parse(text);
-        
         if (!Array.isArray(parsedLyrics)) {
-          throw new Error('Lyrics file must contain a JSON array');
-        }
-        
-        const validLyrics = parsedLyrics.every((lyric: any) => 
-          typeof lyric.start === 'number' && 
-          typeof lyric.end === 'number' && 
-          typeof lyric.text === 'string'
-        );
-        
-        if (!validLyrics) {
-          throw new Error('Each lyric entry must have start, end (numbers) and text (string) properties');
+          throw new Error('Lyrics must be an array');
         }
         
         setLyrics(parsedLyrics);
         setError(null);
-        onFilesChange(audioFile, parsedLyrics, albumArtFile, backgroundFile);
+        updateFiles(); // Make sure this is called after setting the lyrics
       } catch (err) {
         setError(`Invalid lyrics file: ${err instanceof Error ? err.message : 'Unknown error'}`);
         setLyrics(null);
@@ -201,10 +275,10 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       }
       if (type === 'albumArt') {
         setAlbumArtFile(file);
-        onFilesChange(audioFile, lyrics, file, backgroundFile);
+        updateFiles();
       } else {
         setBackgroundFile(file);
-        onFilesChange(audioFile, lyrics, albumArtFile, file);
+        updateFiles();
       }
       setError(null);
     }
@@ -227,7 +301,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     e.stopPropagation();
   };
 
-  const handleDrop = async (e: React.DragEvent, type: 'audio' | 'lyrics' | 'albumArt' | 'background') => {
+  const handleDrop = async (e: React.DragEvent, type: 'main' | 'lyrics' | 'albumArt' | 'background' | 'instrumental' | 'vocal' | 'littleVocal') => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(prev => ({ ...prev, [type]: false }));
@@ -236,14 +310,34 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       const file = e.dataTransfer.files[0];
 
       switch (type) {
-        case 'audio':
+        case 'main':
           if (!file.type.startsWith('audio/')) {
             setError('Please upload a valid audio file');
             return;
           }
-          setAudioFile(file);
+          setMainAudioFile(file);
           break;
-
+        case 'instrumental':
+          if (!file.type.startsWith('audio/')) {
+            setError('Please upload a valid audio file');
+            return;
+          }
+          setInstrumentalFile(file);
+          break;
+        case 'vocal':
+          if (!file.type.startsWith('audio/')) {
+            setError('Please upload a valid audio file');
+            return;
+          }
+          setVocalFile(file);
+          break;
+        case 'littleVocal':
+          if (!file.type.startsWith('audio/')) {
+            setError('Please upload a valid audio file');
+            return;
+          }
+          setLittleVocalFile(file);
+          break;
         case 'lyrics':
           if (!file.name.endsWith('.json')) {
             setError('Please upload a valid JSON file');
@@ -255,7 +349,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
             const parsedLyrics = JSON.parse(text);
             if (Array.isArray(parsedLyrics)) {
               setLyrics(parsedLyrics);
-              onFilesChange(audioFile, parsedLyrics, albumArtFile, backgroundFile);
+              updateFiles();
             } else {
               throw new Error('Invalid lyrics format');
             }
@@ -264,7 +358,6 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
             return;
           }
           break;
-
         case 'albumArt':
         case 'background':
           if (!file.type.startsWith('image/')) {
@@ -273,10 +366,10 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
           }
           if (type === 'albumArt') {
             setAlbumArtFile(file);
-            onFilesChange(audioFile, lyrics, file, backgroundFile);
+            updateFiles();
           } else {
             setBackgroundFile(file);
-            onFilesChange(audioFile, lyrics, albumArtFile, file);
+            updateFiles();
           }
           break;
       }
@@ -285,19 +378,34 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
   };
 
   const resetForm = () => {
-    setAudioFile(null);
+    setMainAudioFile(null);
+    setInstrumentalFile(null);
+    setVocalFile(null);
+    setLittleVocalFile(null);
     setLyricsFile(null);
     setAlbumArtFile(null);
     setBackgroundFile(null);
     setLyrics(null);
     setError(null);
     setVideoPath(null);
-    onFilesChange(null, null, null, null);
+    setArtist('');
+    setSongTitle('');
+    setVideoType('Lyrics Video');
+    onFilesChange(
+      { main: null, instrumental: null, vocal: null, littleVocal: null },
+      null,
+      null,
+      null,
+      { artist: '', songTitle: '', videoType: 'Lyrics Video' }
+    );
     
-    if (audioInputRef.current) audioInputRef.current.value = '';
+    if (mainAudioInputRef.current) mainAudioInputRef.current.value = '';
     if (lyricsInputRef.current) lyricsInputRef.current.value = '';
     if (albumArtInputRef.current) albumArtInputRef.current.value = '';
     if (backgroundInputRef.current) backgroundInputRef.current.value = '';
+    if (instrumentalInputRef.current) instrumentalInputRef.current.value = '';
+    if (vocalInputRef.current) vocalInputRef.current.value = '';
+    if (littleVocalInputRef.current) littleVocalInputRef.current.value = '';
   };
 
   return (
@@ -323,24 +431,129 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       </InfoBox>
 
       <div>
-        <InputLabel>Audio File (MP3, WAV, etc.)</InputLabel>
+        <InputLabel>Artist Name</InputLabel>
+        <Input
+          type="text"
+          name="artist"
+          value={artist}
+          onChange={handleMetadataChange}
+          placeholder="Enter artist name"
+        />
+      </div>
+
+      <div>
+        <InputLabel>Song Title</InputLabel>
+        <Input
+          type="text"
+          name="songTitle"
+          value={songTitle}
+          onChange={handleMetadataChange}
+          placeholder="Enter song title"
+        />
+      </div>
+
+      <div>
+        <InputLabel>Video Type</InputLabel>
+        <Select
+          name="videoType"
+          value={videoType}
+          onChange={handleMetadataChange}
+        >
+          <option value="Lyrics Video">Lyrics Video</option>
+          <option value="Vocal Only">Vocal Only</option>
+          <option value="Instrumental Only">Instrumental Only</option>
+          <option value="Little Vocal">Little Vocal</option>
+        </Select>
+      </div>
+
+      <div>
+        <InputLabel>Main Audio File (MP3, WAV)</InputLabel>
         <DropZone
-          isDragging={isDragging['audio']}
-          onDrop={(e) => handleDrop(e, 'audio')}
+          isDragging={isDragging['main']}
+          onDrop={(e) => handleDrop(e, 'main')}
           onDragOver={handleDragOver}
-          onDragEnter={(e) => handleDragEnter(e, 'audio')}
-          onDragLeave={(e) => handleDragLeave(e, 'audio')}
-          onClick={() => audioInputRef.current?.click()}
+          onDragEnter={(e) => handleDragEnter(e, 'main')}
+          onDragLeave={(e) => handleDragLeave(e, 'main')}
+          onClick={() => mainAudioInputRef.current?.click()}
         >
           <DropText>Drag and drop an audio file here or click to browse</DropText>
           <FileInput 
-            ref={audioInputRef}
+            ref={mainAudioInputRef}
             type="file" 
             accept="audio/*" 
-            onChange={handleAudioChange}
+            onChange={(e) => handleAudioChange(e, 'main')}
           />
-          {audioFile && (
-            <FileName>Selected: {audioFile.name}</FileName>
+          {mainAudioFile && (
+            <FileName>Selected: {mainAudioFile.name}</FileName>
+          )}
+        </DropZone>
+      </div>
+
+      <div>
+        <InputLabel>Instrumental Audio (Optional)</InputLabel>
+        <DropZone
+          isDragging={isDragging['instrumental']}
+          onDrop={(e) => handleDrop(e, 'instrumental')}
+          onDragOver={handleDragOver}
+          onDragEnter={(e) => handleDragEnter(e, 'instrumental')}
+          onDragLeave={(e) => handleDragLeave(e, 'instrumental')}
+          onClick={() => instrumentalInputRef.current?.click()}
+        >
+          <DropText>Drag and drop instrumental audio or click to browse</DropText>
+          <FileInput 
+            ref={instrumentalInputRef}
+            type="file" 
+            accept="audio/*" 
+            onChange={(e) => handleAudioChange(e, 'instrumental')}
+          />
+          {instrumentalFile && (
+            <FileName>Selected: {instrumentalFile.name}</FileName>
+          )}
+        </DropZone>
+      </div>
+
+      <div>
+        <InputLabel>Vocal Audio (Optional)</InputLabel>
+        <DropZone
+          isDragging={isDragging['vocal']}
+          onDrop={(e) => handleDrop(e, 'vocal')}
+          onDragOver={handleDragOver}
+          onDragEnter={(e) => handleDragEnter(e, 'vocal')}
+          onDragLeave={(e) => handleDragLeave(e, 'vocal')}
+          onClick={() => vocalInputRef.current?.click()}
+        >
+          <DropText>Drag and drop vocal audio or click to browse</DropText>
+          <FileInput 
+            ref={vocalInputRef}
+            type="file" 
+            accept="audio/*" 
+            onChange={(e) => handleAudioChange(e, 'vocal')}
+          />
+          {vocalFile && (
+            <FileName>Selected: {vocalFile.name}</FileName>
+          )}
+        </DropZone>
+      </div>
+      
+      <div>
+        <InputLabel>Little Vocal Audio (Optional)</InputLabel>
+        <DropZone
+          isDragging={isDragging['littleVocal']}
+          onDrop={(e) => handleDrop(e, 'littleVocal')}
+          onDragOver={handleDragOver}
+          onDragEnter={(e) => handleDragEnter(e, 'littleVocal')}
+          onDragLeave={(e) => handleDragLeave(e, 'littleVocal')}
+          onClick={() => littleVocalInputRef.current?.click()}
+        >
+          <DropText>Drag and drop pre-mixed little vocal audio or click to browse</DropText>
+          <FileInput 
+            ref={littleVocalInputRef}
+            type="file" 
+            accept="audio/*" 
+            onChange={(e) => handleAudioChange(e, 'littleVocal')}
+          />
+          {littleVocalFile && (
+            <FileName>Selected: {littleVocalFile.name}</FileName>
           )}
         </DropZone>
       </div>

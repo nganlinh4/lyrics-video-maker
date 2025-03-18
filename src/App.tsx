@@ -5,7 +5,7 @@ import UploadForm from './components/UploadForm';
 import { LyricsVideoContent } from './components/LyricsVideo';
 import { RenderControl } from './components/RenderControl';
 import VideoPreview from './components/VideoPreview';
-import { LyricEntry } from './types';
+import { LyricEntry, VideoMetadata, AudioFiles } from './types';
 
 const Container = styled.div`
   display: flex;
@@ -49,50 +49,114 @@ const StatusText = styled.div<{ error?: boolean }>`
 `;
 
 const App: React.FC = () => {
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioFiles, setAudioFiles] = useState<AudioFiles>({
+    main: null,
+    instrumental: null,
+    vocal: null,
+    littleVocal: null
+  });
+  const [audioUrls, setAudioUrls] = useState({
+    main: '',
+    instrumental: '',
+    vocal: '',
+    littleVocal: ''
+  });
   const [lyrics, setLyrics] = useState<LyricEntry[] | null>(null);
   const [albumArtFile, setAlbumArtFile] = useState<File | null>(null);
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
   const [videoPath, setVideoPath] = useState<string>('');
-  const [audioUrl, setAudioUrl] = useState<string>('');
   const [durationInSeconds, setDurationInSeconds] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  const [metadata, setMetadata] = useState<VideoMetadata>({
+    artist: '',
+    songTitle: '',
+    videoType: 'Lyrics Video'
+  });
+  const [albumArtUrl, setAlbumArtUrl] = useState('');
+  const [backgroundUrl, setBackgroundUrl] = useState('');
 
+  // Separate URL management for audio and images
   useEffect(() => {
-    // Clean up object URLs on unmount
-    return () => {
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    // Handle audio URLs
+    const newAudioUrls = {
+      main: audioFiles.main ? URL.createObjectURL(audioFiles.main) : '',
+      instrumental: audioFiles.instrumental ? URL.createObjectURL(audioFiles.instrumental) : '',
+      vocal: audioFiles.vocal ? URL.createObjectURL(audioFiles.vocal) : '',
+      littleVocal: audioFiles.littleVocal ? URL.createObjectURL(audioFiles.littleVocal) : ''
     };
-  }, [audioUrl]);
+    setAudioUrls(newAudioUrls);
+
+    // Cleanup function for audio URLs
+    return () => {
+      Object.values(newAudioUrls).forEach(url => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    };
+  }, [audioFiles]);
+
+  // Separate effect for album art
+  useEffect(() => {
+    if (albumArtFile) {
+      const url = URL.createObjectURL(albumArtFile);
+      setAlbumArtUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setAlbumArtUrl('');
+    }
+  }, [albumArtFile]);
+
+  // Separate effect for background
+  useEffect(() => {
+    if (backgroundFile) {
+      const url = URL.createObjectURL(backgroundFile);
+      setBackgroundUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setBackgroundUrl('');
+    }
+  }, [backgroundFile]);
 
   const handleFilesChange = async (
-    newAudioFile: File | null,
+    newAudioFiles: AudioFiles,
     newLyrics: LyricEntry[] | null,
     newAlbumArtFile: File | null,
-    newBackgroundFile: File | null
+    newBackgroundFile: File | null,
+    newMetadata: VideoMetadata
   ) => {
-    setAudioFile(newAudioFile);
+    setAudioFiles(newAudioFiles);
     setLyrics(newLyrics);
     setAlbumArtFile(newAlbumArtFile);
     setBackgroundFile(newBackgroundFile);
+    setMetadata(newMetadata);
 
-    if (newAudioFile) {
-      const url = URL.createObjectURL(newAudioFile);
-      setAudioUrl(url);
-      
-      const audio = new Audio(url);
-      await new Promise(resolve => {
+    if (newAudioFiles.main) {
+      const audio = new Audio(URL.createObjectURL(newAudioFiles.main));
+      await new Promise<void>(resolve => {
         audio.addEventListener('loadedmetadata', () => {
           setDurationInSeconds(audio.duration);
-          resolve(null);
+          resolve();
         });
       });
     }
   };
 
   // Calculate whether to show preview and render controls
-  const canShowPreview = audioFile && lyrics && durationInSeconds > 0;
+  const canShowPreview = audioFiles?.main && lyrics && durationInSeconds > 0;
   const durationInFrames = Math.round(Math.max(30, durationInSeconds * 30));
+
+  console.log('Audio Files:', audioFiles);
+  console.log('Lyrics:', lyrics);
+  console.log('Duration:', durationInSeconds);
+  console.log('Can Show Preview:', canShowPreview);
+
+  useEffect(() => {
+    console.log('Current metadata state:', metadata);
+  }, [metadata]);
+
+  useEffect(() => {
+    console.log('Background File:', backgroundFile);
+    console.log('Background URL:', backgroundUrl);
+  }, [backgroundFile, backgroundUrl]);
 
   return (
     <Container>
@@ -103,6 +167,7 @@ const App: React.FC = () => {
           <h2>Video Preview</h2>
           <PreviewContainer>
             <Player
+              key={`player-${metadata.videoType}-${albumArtUrl}-${backgroundUrl}-${audioUrls.main}-${audioUrls.instrumental}-${audioUrls.vocal}-${audioUrls.littleVocal}`}
               component={LyricsVideoContent}
               durationInFrames={durationInFrames}
               compositionWidth={1280}
@@ -110,11 +175,15 @@ const App: React.FC = () => {
               fps={30}
               controls
               inputProps={{
-                audioUrl,
+                audioUrl: audioUrls.main,
+                instrumentalUrl: audioUrls.instrumental,
+                vocalUrl: audioUrls.vocal,
+                littleVocalUrl: audioUrls.littleVocal,
                 lyrics: lyrics || [],
                 durationInSeconds,
-                albumArtUrl: albumArtFile ? URL.createObjectURL(albumArtFile) : undefined,
-                backgroundImageUrl: backgroundFile ? URL.createObjectURL(backgroundFile) : undefined
+                albumArtUrl,
+                backgroundImageUrl: backgroundUrl,
+                metadata
               }}
             />
           </PreviewContainer>
@@ -129,11 +198,12 @@ const App: React.FC = () => {
 
         {canShowPreview && (
           <RenderControl
-            audioFile={audioFile}
+            audioFile={audioFiles.main}
             lyrics={lyrics}
             durationInSeconds={durationInSeconds}
             albumArtFile={albumArtFile}
             backgroundFile={backgroundFile}
+            metadata={metadata}
             onRenderComplete={setVideoPath}
           />
         )}

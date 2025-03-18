@@ -4,6 +4,19 @@ export interface LyricEntry {
   text: string;
 }
 
+export interface VideoMetadata {
+  artist: string;
+  songTitle: string;
+  videoType: 'Lyrics Video' | 'Vocal Only' | 'Instrumental Only' | 'Little Vocal';
+}
+
+export interface AudioFiles {
+  main: File | null;
+  instrumental?: File | null;
+  vocal?: File | null;
+  littleVocal?: File | null; // Added new option for pre-mixed Little Vocal audio
+}
+
 export interface Props {
   audioUrl: string;
   lyrics: LyricEntry[];

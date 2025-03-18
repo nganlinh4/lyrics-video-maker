@@ -1,73 +1,34 @@
 import React from 'react';
 import { AbsoluteFill, useCurrentFrame, interpolate, Audio, useVideoConfig } from 'remotion';
-
-export interface LyricEntry {
-  start: number;
-  end: number;
-  text: string;
-}
+import { LyricsVideoContent } from '../components/LyricsVideo';
+import { LyricEntry, VideoMetadata } from '../types';
 
 interface Props {
   audioUrl: string;
   lyrics: LyricEntry[];
   durationInSeconds: number;
+  albumArtUrl?: string;
+  backgroundImageUrl?: string;
+  metadata?: VideoMetadata; // Make metadata optional again to match what might come from the server
+  instrumentalUrl?: string;
+  vocalUrl?: string;
+  littleVocalUrl?: string;
 }
 
-export const LyricsComposition: React.FC<Props> = ({ audioUrl, lyrics, durationInSeconds }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const currentTimeInSeconds = frame / fps;
+// Default metadata to use if none is provided
+const DEFAULT_METADATA: VideoMetadata = {
+  artist: 'Unknown Artist',
+  songTitle: 'Unknown Song',
+  videoType: 'Lyrics Video'
+};
 
-  return (
-    <AbsoluteFill 
-      style={{ 
-        backgroundColor: 'black', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
-      }}
-    >
-      <Audio src={audioUrl} />
-      <div style={{ width: '80%', textAlign: 'center' }}>
-        {lyrics.map((lyric, index) => {
-          const fadeDuration = 0.2;
-          const opacity = interpolate(
-            currentTimeInSeconds,
-            [
-              lyric.start - fadeDuration,
-              lyric.start,
-              lyric.end,
-              lyric.end + fadeDuration
-            ],
-            [0, 1, 1, 0],
-            {
-              extrapolateLeft: 'clamp',
-              extrapolateRight: 'clamp',
-            }
-          );
-
-          return (
-            <div
-              key={index}
-              style={{
-                opacity,
-                fontSize: '48px',
-                color: 'white',
-                fontFamily: 'Arial, sans-serif',
-                fontWeight: 'bold',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                position: 'absolute',
-                width: '100%',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-              }}
-            >
-              {lyric.text}
-            </div>
-          );
-        })}
-      </div>
-    </AbsoluteFill>
-  );
+export const LyricsComposition: React.FC<Props> = (props) => {
+  // Create a new props object with the metadata defaulted if it's undefined
+  const enhancedProps = {
+    ...props,
+    metadata: props.metadata || DEFAULT_METADATA
+  };
+  
+  // Pass the enhanced props to the LyricsVideoContent component
+  return <LyricsVideoContent {...enhancedProps} />;
 };
