@@ -425,7 +425,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
               width: ALBUM_COVER_SIZE,
               height: ALBUM_COVER_SIZE,
               backgroundColor: 'rgba(30, 30, 30, 0.6)',
-              borderRadius: '8px',
+              borderRadius: '24px',
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
               display: 'flex',
               alignItems: 'center',
@@ -478,7 +478,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
             textAlign: 'center',
             height: '100%',
             position: 'relative',
-            marginLeft: 600, // Increased from 400
+            marginLeft: 590, // Increased from 400
           }}
         >
           {lyrics?.map((lyric: LyricEntry, index: number) => {
@@ -549,6 +549,27 @@ export const LyricsVideoContent: React.FC<Props> = ({
           })}
         </div>
       </div>
+
+      {/* Add Audio components based on video type */}
+      {metadata.videoType === 'Little Vocal' ? (
+        littleVocalUrl ? (
+          // Use pre-mixed little vocal track if available
+          <Audio src={littleVocalUrl} volume={1} />
+        ) : (
+          // Otherwise mix instrumental and vocal
+          <>
+            {instrumentalUrl && <Audio src={instrumentalUrl} volume={1} />}
+            {vocalUrl && <Audio src={vocalUrl} volume={0.12} />}
+          </>
+        )
+      ) : metadata.videoType === 'Vocal Only' ? (
+        <Audio src={vocalUrl || audioUrl} volume={1} />
+      ) : metadata.videoType === 'Instrumental Only' ? (
+        <Audio src={instrumentalUrl || audioUrl} volume={1} />
+      ) : (
+        // Default Lyrics Video case
+        <Audio src={audioUrl} volume={1} />
+      )}
 
       {/* Overlay effects layer */}
       <div

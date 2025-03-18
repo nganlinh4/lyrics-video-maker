@@ -471,15 +471,16 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       // Handle audio files
       if (file.type.startsWith('audio/')) {
         const nameLower = file.name.toLowerCase();
-        if (nameLower.includes('music')) {
+        if (nameLower.includes('music') || nameLower.includes('instrumental')) {
           detectedInstrumental = file;
           await analyzeAudioFile(file); // Analyze instrumental audio
-        } else if (nameLower.includes('vocals')) {
-          detectedVocal = file;
+        } else if (nameLower.includes('vocal') || nameLower.includes('voc')) {
+          if (nameLower.includes('little') || nameLower.includes('low') || nameLower.includes('+')) {
+            detectedLittleVocal = file;
+          } else {
+            detectedVocal = file;
+          }
           await analyzeAudioFile(file); // Analyze vocal audio
-        } else if (nameLower.includes('+')) {
-          detectedLittleVocal = file;
-          await analyzeAudioFile(file); // Analyze little vocal audio
         } else {
           detectedMain = file;
           await analyzeAudioFile(file); // Analyze main audio
@@ -518,6 +519,14 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     if (detectedLyrics) setLyricsFile(detectedLyrics);
     if (detectedAlbumArt) setAlbumArtFile(detectedAlbumArt);
     if (detectedBackground) setBackgroundFile(detectedBackground);
+
+    // Log detected files for debugging
+    console.log('Detected files:', {
+      main: detectedMain?.name,
+      instrumental: detectedInstrumental?.name,
+      vocal: detectedVocal?.name,
+      littleVocal: detectedLittleVocal?.name
+    });
 
     // Update the form
     setTimeout(() => {
