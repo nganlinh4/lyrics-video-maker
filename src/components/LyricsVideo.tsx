@@ -3,13 +3,41 @@ import { AbsoluteFill, useCurrentFrame, interpolate, Audio, useVideoConfig, Easi
 import { LyricEntry, VideoMetadata } from '../types';
 import styled, { ThemeProvider } from 'styled-components';
 import { useAudioAnalyzer, getAnalysisUrl } from '../utils/audioAnalyzer';
-import { loadFont } from '@remotion/google-fonts/Inter';
 
-// Load Inter font variations
-const { fontFamily, waitUntilDone } = loadFont();
+// Define Inter font directly without using @remotion/google-fonts
+const FONT_FAMILY = "'Inter', sans-serif";
 
-// Font-related constants
-export const FONT_FAMILY = fontFamily;
+// Define custom inline font loading instead of using @remotion/google-fonts
+const fontStyles = `
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+    src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 500;
+    font-display: block;
+    src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-display: block;
+    src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 700;
+    font-display: block;
+    src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+  }
+`;
 
 // Spotify-inspired constants (scaled up by 1.5 for 1080p)
 const LYRIC_HEIGHT = 98; // Increased from 65
@@ -112,14 +140,9 @@ export const LyricsVideoContent: React.FC<Props> = ({
   const { fps } = useVideoConfig();
   const currentTimeInSeconds = frame / fps;
 
-  const [handle] = useState(() => delayRender());
-
-  useEffect(() => {
-    waitUntilDone().then(() => {
-      continueRender(handle);
-    });
-  }, [handle]);
-
+  // Remove the useState and useEffect for font loading entirely
+  // Rest of the component code stays the same...
+  
   const getAudioConfig = useCallback(() => {
     // Return appropriate audio configuration based on video type
     switch (metadata.videoType) {
@@ -403,6 +426,8 @@ export const LyricsVideoContent: React.FC<Props> = ({
 
   return (
     <ThemeProvider theme={{ accentColor }}>
+      {/* Add style tag directly in the component */}
+      <style dangerouslySetInnerHTML={{ __html: fontStyles }} />
       <AbsoluteFill
         style={{
           backgroundColor: '#000',
