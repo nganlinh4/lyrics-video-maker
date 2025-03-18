@@ -53,6 +53,12 @@ app.post('/upload/:type', upload.single('file'), (req, res) => {
 
 // Render video endpoint
 app.post('/render', async (req, res) => {
+  // Set headers for Server-Sent Events
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
   try {
     const { 
       compositionId = 'lyrics-video', // Get compositionId from request, fallback to default
@@ -165,17 +171,24 @@ app.post('/render', async (req, res) => {
       },
       concurrency: 20,
       logLevel: 'verbose',
-      hardwareAcceleration: 'if-possible',
+      onProgress: ({ renderedFrames, encodedFrames }) => {
+        console.log(`Progress: ${renderedFrames}/${durationInFrames} frames`);
+        const progress = renderedFrames / durationInFrames;
+        if (res.writableEnded) return;
+        res.write(`data: ${JSON.stringify({ progress, renderedFrames, durationInFrames })}\n\n`);
+      }
     });
 
     const videoUrl = `http://localhost:${port}/output/${outputFile}`;
-    res.json({ videoUrl });
+    res.write(`data: ${JSON.stringify({ status: 'complete', videoUrl })}\n\n`);
+    res.end();
   } catch (error) {
     console.error('Rendering error:', error);
-    res.status(500).json({ 
-      error: 'Error rendering video',
-      details: error instanceof Error ? error.message : String(error)
-    });
+    res.write(`data: ${JSON.stringify({ 
+      status: 'error',
+      error: error instanceof Error ? error.message : String(error)
+    })}\n\n`);
+    res.end();
   }
 });
 

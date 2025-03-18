@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Player } from '@remotion/player';
 import { LyricEntry } from '../types';
 import { LyricsVideoContent } from './LyricsVideo';
+import VideoPreview from './VideoPreview';
 import remotionService from '../services/remotionService';
 
 const Container = styled.div`
@@ -91,6 +92,15 @@ export const RenderControl: React.FC<Props> = ({
   const [isRendering, setIsRendering] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [currentVersion, setCurrentVersion] = useState<string | null>(null);
+  const [renderedVideos, setRenderedVideos] = useState<{ type: string; url: string }[]>([]);
+
+  const videoTypes = [
+    'Lyrics Video',
+    'Vocal Only',
+    'Instrumental Only',
+    'Little Vocal'
+  ] as const;
 
   const handleRender = async () => {
     if (!audioFile || !(audioFile instanceof File)) {
@@ -152,6 +162,73 @@ export const RenderControl: React.FC<Props> = ({
     }
   };
 
+  const handleRenderAllVersions = async () => {
+    if (!audioFile || !(audioFile instanceof File)) {
+      setError('Please upload a valid audio file');
+      return;
+    }
+
+    if (!lyrics || !Array.isArray(lyrics) || lyrics.length === 0) {
+      setError('Please upload valid lyrics');
+      return;
+    }
+
+    setIsRendering(true);
+    setProgress(0);
+    setError(null);
+    setRenderedVideos([]);
+
+    try {
+      for (const videoType of videoTypes) {
+        setCurrentVersion(videoType);
+        
+        // Create URLs for additional audio files if they exist
+        const additionalUrls: { [key: string]: string } = {};
+        if (vocalFile) {
+          additionalUrls.vocalUrl = URL.createObjectURL(vocalFile);
+        }
+        if (instrumentalFile) {
+          additionalUrls.instrumentalUrl = URL.createObjectURL(instrumentalFile);
+        }
+        if (littleVocalFile) {
+          additionalUrls.littleVocalUrl = URL.createObjectURL(littleVocalFile);
+        }
+
+        const videoPath = await remotionService.renderVideo(
+          audioFile,
+          lyrics,
+          durationInSeconds,
+          {
+            albumArtUrl: albumArtFile ? URL.createObjectURL(albumArtFile) : undefined,
+            backgroundImageUrl: backgroundFile ? URL.createObjectURL(backgroundFile) : undefined,
+            metadata: { ...metadata, videoType },
+            ...additionalUrls
+          },
+          (progress) => {
+            if (progress.status === 'error') {
+              setError(`Error rendering ${videoType}: ${progress.error}`);
+            } else {
+              setProgress(progress.progress);
+            }
+          }
+        );
+
+        // Clean up URLs
+        Object.values(additionalUrls).forEach(url => URL.revokeObjectURL(url));
+
+        // Add to rendered videos list
+        setRenderedVideos(prev => [...prev, { type: videoType, url: videoPath }]);
+      }
+
+      setIsRendering(false);
+      setCurrentVersion(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setIsRendering(false);
+      setCurrentVersion(null);
+    }
+  };
+
   return (
     <Container>
       <InfoText>
@@ -159,23 +236,75 @@ export const RenderControl: React.FC<Props> = ({
         The preview above shows how your video will look, but downloading the final video 
         is not available in this browser-only version.
       </InfoText>
-      <Button
-        onClick={handleRender}
-        disabled={isRendering || !audioFile || !lyrics}
-      >
-        {isRendering ? 'Rendering...' : 'Render Video'}
-      </Button>
+      
+      <ButtonContainer>
+        <Button
+          onClick={handleRender}
+          disabled={isRendering || !audioFile || !lyrics}
+        >
+          {isRendering ? 'Rendering...' : 'Render Current Version'}
+        </Button>
+        
+        <Button
+          onClick={handleRenderAllVersions}
+          disabled={isRendering || !audioFile || !lyrics}
+          style={{ background: 'linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%)' }}
+        >
+          {isRendering ? `Rendering ${currentVersion || '...'}` : 'Render All Versions'}
+        </Button>
+      </ButtonContainer>
+
       {isRendering && (
         <>
           <ProgressContainer>
             <ProgressBar width={progress * 100} />
           </ProgressContainer>
           <ProgressText>
+            {currentVersion ? `${currentVersion}: ` : ''}
             {Math.round(progress * 100)}% Complete
           </ProgressText>
         </>
       )}
+      
+      {renderedVideos.length > 0 && (
+        <VideoList>
+          <h3>Rendered Videos:</h3>
+          {renderedVideos.map((video, index) => (
+            <VideoItem key={index}>
+              <VideoTypeLabel>{video.type}</VideoTypeLabel>
+              <VideoPreview videoUrl={video.url} />
+            </VideoItem>
+          ))}
+        </VideoList>
+      )}
+
       {error && <div style={{ color: 'red' }}>{error}</div>}
     </Container>
   );
 };
+
+// Add new styled components
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+`;
+
+const VideoList = styled.div`
+  margin-top: 2rem;
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+`;
+
+const VideoItem = styled.div`
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+`;
+
+const VideoTypeLabel = styled.div`
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #666;
+`;

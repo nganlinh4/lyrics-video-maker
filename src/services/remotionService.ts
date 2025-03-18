@@ -141,8 +141,8 @@ export class RemotionService {
         status: 'rendering'
       });
 
-      // Request video rendering with server URLs and composition ID
-      const renderResponse = await fetch(`${SERVER_URL}/render`, {
+      // Set up SSE connection for progress updates
+      const response = await fetch(`${SERVER_URL}/render`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -154,29 +154,58 @@ export class RemotionService {
           durationInSeconds,
           albumArtUrl,
           backgroundImageUrl: backgroundUrl,
-          metadata, // Use the guaranteed metadata
-          // Include additional audio URLs if available
+          metadata,
           instrumentalUrl: additionalAudioUrls.instrumentalUrl,
           vocalUrl: additionalAudioUrls.vocalUrl,
           littleVocalUrl: additionalAudioUrls.littleVocalUrl
         }),
       });
 
-      if (!renderResponse.ok) {
-        const error = await renderResponse.json();
-        throw new Error(error.details || 'Failed to render video');
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      if (!reader) {
+        throw new Error('Failed to get response reader');
       }
 
-      const { videoUrl } = await renderResponse.json();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      onProgress?.({
-        progress: 1,
-        durationInFrames: Math.round(durationInSeconds * this.fps),
-        renderedFrames: Math.round(durationInSeconds * this.fps),
-        status: 'success'
-      });
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
-      return videoUrl;
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(5));
+              
+              if (data.status === 'complete') {
+                onProgress?.({
+                  progress: 1,
+                  durationInFrames: Math.round(durationInSeconds * this.fps),
+                  renderedFrames: Math.round(durationInSeconds * this.fps),
+                  status: 'success'
+                });
+                return data.videoUrl;
+              } else {
+                onProgress?.({
+                  progress: data.progress,
+                  durationInFrames: data.durationInFrames,
+                  renderedFrames: data.renderedFrames,
+                  status: 'rendering'
+                });
+              }
+            } catch (e) {
+              console.error('Error parsing progress data:', e);
+            }
+          }
+        }
+      }
+
+      throw new Error('Render process ended without completion');
     } catch (error) {
       console.error('Error rendering video:', error);
       onProgress?.({
