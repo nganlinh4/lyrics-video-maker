@@ -22,13 +22,4 @@ const DEFAULT_METADATA: VideoMetadata = {
   videoType: 'Lyrics Video'
 };
 
-export const LyricsComposition: React.FC<Props> = (props) => {
-  // Create a new props object with the metadata defaulted if it's undefined
-  const enhancedProps = {
-    ...props,
-    metadata: props.metadata || DEFAULT_METADATA
-  };
-  
-  // Pass the enhanced props to the LyricsVideoContent component
-  return <LyricsVideoContent {...enhancedProps} />;
-};
+export { LyricsVideoContent };

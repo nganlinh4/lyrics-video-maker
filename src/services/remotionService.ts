@@ -24,10 +24,23 @@ export interface RenderOptions {
 }
 
 export class RemotionService {
-  private compositionId = 'lyrics-video';
   private fps = 30;
   
-  // Add default metadata
+  // Map video types to composition IDs
+  private getCompositionId(videoType: string): string {
+    switch (videoType) {
+      case 'Vocal Only':
+        return 'vocal-only';
+      case 'Instrumental Only':
+        return 'instrumental-only';
+      case 'Little Vocal':
+        return 'little-vocal';
+      case 'Lyrics Video':
+      default:
+        return 'lyrics-video';
+    }
+  }
+
   private defaultMetadata = {
     artist: 'Unknown Artist',
     songTitle: 'Unknown Song',
@@ -61,6 +74,7 @@ export class RemotionService {
     try {
       // Ensure metadata is present by merging with defaults
       const metadata = options.metadata || this.defaultMetadata;
+      const compositionId = this.getCompositionId(metadata.videoType);
       
       // Upload all files first
       const audioPromises = [this.uploadFile(audioFile, 'audio')];
@@ -127,13 +141,14 @@ export class RemotionService {
         status: 'rendering'
       });
 
-      // Request video rendering with server URLs
+      // Request video rendering with server URLs and composition ID
       const renderResponse = await fetch(`${SERVER_URL}/render`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          compositionId,
           audioFile: audioUrl.split('/').pop(),
           lyrics,
           durationInSeconds,

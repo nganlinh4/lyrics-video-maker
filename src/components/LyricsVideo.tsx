@@ -23,14 +23,6 @@ const ACTIVE_COLOR = [30, 215, 96];
 const INACTIVE_WEIGHT = 400;  // normal
 const ACTIVE_WEIGHT = 700;    // bold
 
-// Function to interpolate RGB colors
-const interpolateColor = (progress: number, from: number[], to: number[]) => {
-  const r = interpolate(progress, [0, 1], [from[0], to[0]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const g = interpolate(progress, [0, 1], [from[1], to[1]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const b = interpolate(progress, [0, 1], [from[2], to[2]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
-};
-
 // Utility function to get average color from an image
 const getAverageColor = (imgElement: HTMLImageElement): number[] => {
   const canvas = document.createElement('canvas');
@@ -58,111 +50,12 @@ const getAverageColor = (imgElement: HTMLImageElement): number[] => {
   ];
 };
 
-export const LyricsComponent: React.FC<{ lyrics: LyricEntry[] }> = ({ lyrics }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const currentTimeInSeconds = frame / fps;
-
-  return (
-    <div>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
-        rel="stylesheet"
-      />
-      {lyrics.map((lyric, index) => {
-        const TRANSITION_DURATION = 0.5;
-        let progress = 0;
-
-        if (currentTimeInSeconds < lyric.start - TRANSITION_DURATION) {
-          progress = 0;
-        } else if (currentTimeInSeconds <= lyric.start) {
-          progress = (currentTimeInSeconds - (lyric.start - TRANSITION_DURATION)) / TRANSITION_DURATION;
-        } else if (currentTimeInSeconds < lyric.end) {
-          progress = 1;
-        } else if (currentTimeInSeconds <= lyric.end + TRANSITION_DURATION) {
-          progress = 1 - (currentTimeInSeconds - lyric.end) / TRANSITION_DURATION;
-        }
-
-        return (
-          <div
-            key={index}
-            style={{
-              fontFamily: 'Montserrat',
-              fontWeight: 400,
-              maxWidth: '800px',
-              margin: '0 auto',
-              whiteSpace: 'pre-wrap',
-              wordWrap: 'break-word',
-            }}
-          >
-            {lyric.text}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-const ParticleBackground: React.FC<{ 
-  albumArtUrl?: string;
-  accentColor: number[];
-}> = ({ albumArtUrl, accentColor }) => {
-  const { width, height, fps } = useVideoConfig();
-  const frame = useCurrentFrame();
-  const particleCount = 45;
-
-  const particles = useMemo(() => {
-    return Array.from({ length: particleCount }).map(() => ({
-      size: 3 + Math.random() * 8,
-      speedX: 0.1 + Math.random() * 0.4,
-      speedY: 0.1 + Math.random() * 0.4,
-      phaseX: Math.random() * Math.PI * 2,
-      phaseY: Math.random() * Math.PI * 2,
-      baseX: Math.random() * width,
-      baseY: Math.random() * height,
-      amplitudeX: 10 + Math.random() * 40,
-      amplitudeY: 10 + Math.random() * 40,
-      opacitySpeed: 0.1 + Math.random() * 0.3,
-      opacityPhase: Math.random() * Math.PI * 2,
-      isAccent: Math.random() < 0.25, // 25% chance of using accent color
-      glowSize: 10 + Math.random() * 15,
-      glowOpacity: 0.2 + Math.random() * 0.3,
-    }));
-  }, [width, height]);
-  
-  return (
-    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
-      {particles.map((particle, i) => {
-        const x = particle.baseX + 
-          Math.sin((frame / fps) * particle.speedX + particle.phaseX) * particle.amplitudeX;
-        const y = particle.baseY + 
-          Math.sin((frame / fps) * particle.speedY + particle.phaseY) * particle.amplitudeY;
-        
-        const opacity = 0.3 + 
-          Math.sin((frame / fps) * particle.opacitySpeed + particle.opacityPhase) * 0.2;
-
-        const [r, g, b] = accentColor;
-        
-        return (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              width: `${particle.size}px`,
-              height: `${particle.size}px`,
-              borderRadius: '50%',
-              backgroundColor: particle.isAccent ? `rgb(${r}, ${g}, ${b})` : 'white',
-              opacity,
-              transform: `translate(${x}px, ${y}px)`,
-              boxShadow: particle.isAccent 
-                ? `0 0 ${particle.glowSize}px ${particle.glowSize/2}px rgba(${r}, ${g}, ${b}, ${particle.glowOpacity})` 
-                : `0 0 ${particle.glowSize}px ${particle.glowSize/2}px rgba(255, 255, 255, ${particle.glowOpacity})`,
-            }}
-          />
-        );
-      })}
-    </div>
-  );
+// Function to interpolate RGB colors
+const interpolateColor = (progress: number, from: number[], to: number[]) => {
+  const r = interpolate(progress, [0, 1], [from[0], to[0]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const g = interpolate(progress, [0, 1], [from[1], to[1]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const b = interpolate(progress, [0, 1], [from[2], to[2]], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
 };
 
 export interface Props {
@@ -197,35 +90,36 @@ export const LyricsVideoContent: React.FC<Props> = ({
   const { fps } = useVideoConfig();
   const currentTimeInSeconds = frame / fps;
 
-
   const getAudioConfig = useCallback(() => {
-    // Only return audio configs if the URL is available
+    // Return appropriate audio configuration based on video type
     switch (metadata.videoType) {
-      case 'Lyrics Video':
-        return audioUrl ? [{ src: audioUrl, volume: 1 }] : [];
-      
       case 'Vocal Only':
-        return vocalUrl ? [{ src: vocalUrl, volume: 1 }] : [];
+        // For Vocal Only, use vocal track if available, otherwise use main audio
+        return vocalUrl ? [{ src: vocalUrl, volume: 1 }] : (audioUrl ? [{ src: audioUrl, volume: 1 }] : []);
       
       case 'Instrumental Only':
-        return instrumentalUrl ? [{ src: instrumentalUrl, volume: 1 }] : [];
+        // For Instrumental Only, use instrumental track if available, otherwise use main audio
+        return instrumentalUrl ? [{ src: instrumentalUrl, volume: 1 }] : (audioUrl ? [{ src: audioUrl, volume: 1 }] : []);
       
       case 'Little Vocal':
-        // Use direct littleVocal audio file if available
         if (littleVocalUrl) {
+          // Use pre-mixed little vocal track if available
           return [{ src: littleVocalUrl, volume: 1 }];
-        }
-        // Fall back to the previous mixing approach if littleVocalUrl is not available
-        if (instrumentalUrl && vocalUrl) {
+        } else if (instrumentalUrl && vocalUrl) {
+          // Otherwise mix instrumental and vocal tracks
           return [
             { src: instrumentalUrl, volume: 1 },
             { src: vocalUrl, volume: 0.12 }
           ];
+        } else {
+          // Fallback to main audio
+          return audioUrl ? [{ src: audioUrl, volume: 1 }] : [];
         }
-        return [];
       
+      case 'Lyrics Video':
       default:
-        return [];
+        // For standard lyrics video, use main audio track
+        return audioUrl ? [{ src: audioUrl, volume: 1 }] : [];
     }
   }, [metadata.videoType, audioUrl, instrumentalUrl, vocalUrl, littleVocalUrl]);
 
@@ -357,26 +251,28 @@ export const LyricsVideoContent: React.FC<Props> = ({
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
+        fontFamily: FONT_FAMILY
       }}
     >
+      {/* Moving font loading to the top level */}
       <link 
         href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" 
         rel="stylesheet" 
       />
       
-      {/* Base layer */}
-      <ParticleBackground albumArtUrl={albumArtUrl} accentColor={accentColor} />
-      
       {/* Audio elements */}
-      {getAudioConfig().map((audio: AudioConfig, index: number) => (
-        <Audio 
-          key={`audio-${metadata.videoType}-${audio.src}-${index}`}
-          src={audio.src}
-          volume={audio.volume}
-          playbackRate={1}
-          muted={false}
-        />
-      ))}
+      {getAudioConfig().map((audio: AudioConfig, index: number) => {
+        console.log('Rendering audio element:', { type: metadata.videoType, src: audio.src, volume: audio.volume });
+        return (
+          <Audio 
+            key={`audio-${metadata.videoType}-${audio.src}-${index}`}
+            src={audio.src}
+            volume={audio.volume}
+            playbackRate={1}
+            muted={false}
+          />
+        );
+      })}
 
       {/* Background effects layer */}
       <div

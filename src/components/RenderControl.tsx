@@ -71,6 +71,9 @@ interface Props {
     videoType: 'Lyrics Video' | 'Vocal Only' | 'Instrumental Only' | 'Little Vocal';
   };
   onRenderComplete: (videoPath: string) => void;
+  vocalFile?: File | null;
+  instrumentalFile?: File | null;
+  littleVocalFile?: File | null;
 }
 
 export const RenderControl: React.FC<Props> = ({
@@ -80,7 +83,10 @@ export const RenderControl: React.FC<Props> = ({
   albumArtFile,
   backgroundFile,
   metadata,
-  onRenderComplete
+  onRenderComplete,
+  vocalFile,
+  instrumentalFile,
+  littleVocalFile
 }) => {
   const [isRendering, setIsRendering] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -102,14 +108,28 @@ export const RenderControl: React.FC<Props> = ({
     setError(null);
 
     try {
+      // Create URLs for additional audio files if they exist
+      const additionalUrls: { [key: string]: string } = {};
+      
+      if (vocalFile) {
+        additionalUrls.vocalUrl = URL.createObjectURL(vocalFile);
+      }
+      if (instrumentalFile) {
+        additionalUrls.instrumentalUrl = URL.createObjectURL(instrumentalFile);
+      }
+      if (littleVocalFile) {
+        additionalUrls.littleVocalUrl = URL.createObjectURL(littleVocalFile);
+      }
+
       const videoPath = await remotionService.renderVideo(
         audioFile,
         lyrics,
-        durationInSeconds, // Pass the actual audio duration
+        durationInSeconds,
         {
           albumArtUrl: albumArtFile ? URL.createObjectURL(albumArtFile) : undefined,
           backgroundImageUrl: backgroundFile ? URL.createObjectURL(backgroundFile) : undefined,
-          metadata // Pass the metadata to the rendering service
+          metadata,
+          ...additionalUrls
         },
         (progress) => {
           if (progress.status === 'error') {
@@ -120,6 +140,9 @@ export const RenderControl: React.FC<Props> = ({
           }
         }
       );
+
+      // Clean up URLs
+      Object.values(additionalUrls).forEach(url => URL.revokeObjectURL(url));
 
       setIsRendering(false);
       onRenderComplete(videoPath);

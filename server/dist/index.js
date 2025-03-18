@@ -51,7 +51,8 @@ app.post('/upload/:type', upload.single('file'), (req, res) => {
 // Render video endpoint
 app.post('/render', async (req, res) => {
     try {
-        const { audioFile, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl, metadata = {
+        const { compositionId = 'lyrics-video', // Get compositionId from request, fallback to default
+        audioFile, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl, metadata = {
             artist: 'Unknown Artist',
             songTitle: 'Unknown Song',
             videoType: 'Lyrics Video'
@@ -59,12 +60,11 @@ app.post('/render', async (req, res) => {
         if (!audioFile || !lyrics || !durationInSeconds) {
             return res.status(400).json({ error: 'Missing required parameters' });
         }
-        const compositionId = 'lyrics-video';
         const fps = 30;
         const durationInFrames = Math.max(30, Math.ceil(durationInSeconds * fps));
         const outputFile = `lyrics-video-${Date.now()}.mp4`;
         const outputPath = path_1.default.join(outputDir, outputFile);
-        // Create a URL that can be accessed via HTTP instead of file:// protocol
+        // Create URLs that can be accessed via HTTP instead of file:// protocol
         const audioUrl = `http://localhost:${port}/uploads/${audioFile}`;
         // Use index.ts as the entry point which contains registerRoot()
         const entryPoint = path_1.default.join(__dirname, '../../src/remotion/index.ts');
@@ -72,6 +72,7 @@ app.post('/render', async (req, res) => {
         console.log('Bundling Remotion project...');
         const bundleResult = await (0, bundler_1.bundle)(entryPoint);
         console.log('Bundle completed');
+        console.log('Using composition ID:', compositionId);
         if (!bundleResult) {
             throw new Error('Bundling failed: No result returned from bundler');
         }
@@ -135,7 +136,8 @@ app.post('/render', async (req, res) => {
                 ignoreCertificateErrors: true,
                 gl: "vulkan"
             },
-            concurrency: 20
+            concurrency: 20,
+            logLevel: 'verbose'
         });
         const videoUrl = `http://localhost:${port}/output/${outputFile}`;
         res.json({ videoUrl });

@@ -1,43 +1,88 @@
 import React from 'react';
 import { Composition } from 'remotion';
-// Import the better styled component instead of the basic one
-import { LyricsVideoContent } from '../components/LyricsVideo';
-import { VideoMetadata } from '../types';
+import { LyricsVideoContent } from './Composition';
+import { Props, VideoMetadata, LyricEntry } from '../types';
 
-const sampleLyrics = [
+// Sample data for preview mode
+const sampleLyrics: LyricEntry[] = [
   { start: 0, end: 2, text: "Welcome to" },
   { start: 2, end: 4, text: "Lyrics Video Maker" },
   { start: 4, end: 6, text: "Preview Mode" }
 ];
 
-// For the sample preview mode, we'll use a short duration
-const SAMPLE_DURATION_SECONDS = 10;
-// For rendering, we'll use the actual duration passed in props
-
-// Default metadata to use in preview mode
-const DEFAULT_METADATA: VideoMetadata = {
+const defaultMetadata: VideoMetadata = {
   artist: 'Preview Artist',
   songTitle: 'Preview Song',
   videoType: 'Lyrics Video'
 };
 
+// Create a type-safe wrapper component
+const VideoComponentWrapper: React.FC<Record<string, unknown>> = (props) => {
+  // Ensure all required props are present with defaults
+  const safeProps: Props = {
+    audioUrl: (props.audioUrl as string) || '',
+    lyrics: (props.lyrics as LyricEntry[]) || sampleLyrics,
+    durationInSeconds: (props.durationInSeconds as number) || 6,
+    metadata: (props.metadata as VideoMetadata) || defaultMetadata,
+    albumArtUrl: props.albumArtUrl as string | undefined,
+    backgroundImageUrl: props.backgroundImageUrl as string | undefined,
+    instrumentalUrl: props.instrumentalUrl as string | undefined,
+    vocalUrl: props.vocalUrl as string | undefined,
+    littleVocalUrl: props.littleVocalUrl as string | undefined
+  };
+  
+  return <LyricsVideoContent {...safeProps} />;
+};
+
 export const RemotionRoot: React.FC = () => {
+  const commonProps = {
+    component: VideoComponentWrapper,
+    fps: 30,
+    width: 1280,
+    height: 720,
+    durationInFrames: 180
+  };
+
   return (
     <>
       <Composition
         id="lyrics-video"
-        // Use the beautiful component from components/LyricsVideo instead of the basic Composition
-        component={LyricsVideoContent as React.FC}
-        // Use 30fps and a dynamic duration from props, falling back to the sample duration
-        durationInFrames={SAMPLE_DURATION_SECONDS * 30}
-        fps={30}
-        width={1280}
-        height={720}
+        {...commonProps}
         defaultProps={{
-          audioUrl: '', // No audio in preview mode
+          audioUrl: '',
           lyrics: sampleLyrics,
-          durationInSeconds: SAMPLE_DURATION_SECONDS,
-          metadata: DEFAULT_METADATA // Add the required metadata
+          durationInSeconds: 6,
+          metadata: { ...defaultMetadata, videoType: 'Lyrics Video' }
+        }}
+      />
+      <Composition
+        id="vocal-only"
+        {...commonProps}
+        defaultProps={{
+          audioUrl: '',
+          lyrics: sampleLyrics,
+          durationInSeconds: 6,
+          metadata: { ...defaultMetadata, videoType: 'Vocal Only' }
+        }}
+      />
+      <Composition
+        id="instrumental-only"
+        {...commonProps}
+        defaultProps={{
+          audioUrl: '',
+          lyrics: sampleLyrics,
+          durationInSeconds: 6,
+          metadata: { ...defaultMetadata, videoType: 'Instrumental Only' }
+        }}
+      />
+      <Composition
+        id="little-vocal"
+        {...commonProps}
+        defaultProps={{
+          audioUrl: '',
+          lyrics: sampleLyrics,
+          durationInSeconds: 6,
+          metadata: { ...defaultMetadata, videoType: 'Little Vocal' }
         }}
       />
     </>

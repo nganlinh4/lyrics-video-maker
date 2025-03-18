@@ -205,10 +205,13 @@ const App: React.FC = () => {
             backgroundFile={backgroundFile}
             metadata={metadata}
             onRenderComplete={setVideoPath}
+            vocalFile={audioFiles.vocal}
+            instrumentalFile={audioFiles.instrumental}
+            littleVocalFile={audioFiles.littleVocal}
           />
         )}
   
-    </Card>
+      </Card>
       
       {videoPath && (
         <Card>

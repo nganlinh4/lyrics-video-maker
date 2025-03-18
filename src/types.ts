@@ -23,6 +23,10 @@ export interface Props {
   durationInSeconds: number;
   albumArtUrl?: string;
   backgroundImageUrl?: string;
+  metadata: VideoMetadata;
+  instrumentalUrl?: string;
+  vocalUrl?: string;
+  littleVocalUrl?: string;
 }
 
 // Interface for components that can work with either a File or URL

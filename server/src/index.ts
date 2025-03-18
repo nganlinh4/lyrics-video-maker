@@ -55,6 +55,7 @@ app.post('/upload/:type', upload.single('file'), (req, res) => {
 app.post('/render', async (req, res) => {
   try {
     const { 
+      compositionId = 'lyrics-video', // Get compositionId from request, fallback to default
       audioFile, 
       lyrics, 
       durationInSeconds, 
@@ -74,14 +75,13 @@ app.post('/render', async (req, res) => {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
-    const compositionId = 'lyrics-video';
     const fps = 30;
     const durationInFrames = Math.max(30, Math.ceil(durationInSeconds * fps));
     
     const outputFile = `lyrics-video-${Date.now()}.mp4`;
     const outputPath = path.join(outputDir, outputFile);
     
-    // Create a URL that can be accessed via HTTP instead of file:// protocol
+    // Create URLs that can be accessed via HTTP instead of file:// protocol
     const audioUrl = `http://localhost:${port}/uploads/${audioFile}`;
     
     // Use index.ts as the entry point which contains registerRoot()
@@ -92,6 +92,7 @@ app.post('/render', async (req, res) => {
     const bundleResult = await bundle(entryPoint);
     
     console.log('Bundle completed');
+    console.log('Using composition ID:', compositionId);
     
     if (!bundleResult) {
       throw new Error('Bundling failed: No result returned from bundler');
@@ -162,7 +163,8 @@ app.post('/render', async (req, res) => {
         ignoreCertificateErrors: true,
         gl: "vulkan"
       },
-      concurrency: 20
+      concurrency: 20,
+      logLevel: 'verbose'
     });
 
     const videoUrl = `http://localhost:${port}/output/${outputFile}`;
