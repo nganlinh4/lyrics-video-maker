@@ -369,7 +369,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
               extrapolateRight: 'clamp'
             });
             
-            const opacity = interpolate(distance, [0, 200], [1, 0.3], {
+            const opacity = interpolate(distance, [0, 150, 350], [1, 0.3, 0], {
               extrapolateLeft: 'clamp',
               extrapolateRight: 'clamp'
             });
