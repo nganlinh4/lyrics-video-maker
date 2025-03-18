@@ -348,7 +348,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
       style={{
         backgroundColor: '#000',
         backgroundImage: backgroundImageUrl 
-          ? `linear-gradient(rgba(0, 0, 0, ${0.7 + backgroundPulse}), rgba(0, 0, 0, ${0.8 + backgroundPulse})), url(${backgroundImageUrl})` 
+          ? `linear-gradient(rgba(0, 0, 0, ${0.4 + backgroundPulse}), rgba(0, 0, 0, ${0.5 + backgroundPulse})), url(${backgroundImageUrl})` 
           : 'linear-gradient(180deg, #121212 0%, #060606 100%)',
         backgroundSize: 'cover',
         backgroundPosition: `calc(50% + ${parallaxOffset}px) center`,
@@ -562,7 +562,7 @@ const MetadataContainer = styled.div`
 
 const CenteredMetadataContainer = styled.div`
   position: absolute;
-  top: 20px;
+  top: calc(50% - ${ALBUM_COVER_SIZE / 2}px - 110px); /* Position 80px above album art */
   left: ${ALBUM_COVER_MARGIN}px;
   width: ${ALBUM_COVER_SIZE}px;
   text-align: center;
@@ -584,17 +584,15 @@ const AlbumCoverContainer = styled.div`
 const VideoTypeLabel = styled.div`
   color: white;
   font-family: ${FONT_FAMILY};
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 600;
   text-align: center;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  background-color: rgba(0, 0, 0, 0.4);
   padding: 6px 15px;
-  border-radius: 6px;
 `;
 
 const ArtistName = styled.h2`
-  font-size: 24px;
+  font-size: 32px; // Increased from 24px
   margin: 0;
   font-weight: 600;
   opacity: 0.9;
