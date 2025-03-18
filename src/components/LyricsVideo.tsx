@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { AbsoluteFill, useCurrentFrame, interpolate, Audio, useVideoConfig, Easing } from 'remotion';
 import { LyricEntry, VideoMetadata } from '../types';
 import styled from 'styled-components';
+import { useAudioAnalyzer, getAnalysisUrl } from '../utils/audioAnalyzer';
 
 // Font-related constants
 const FONT_FAMILY = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
@@ -236,6 +237,122 @@ export const LyricsVideoContent: React.FC<Props> = ({
     return 0;
   };
 
+  const VISUALIZER_HEIGHT = 40;
+  const VISUALIZER_WIDTH = ALBUM_COVER_SIZE;
+  const VISUALIZER_WINDOW = 20; // seconds on each side
+
+  // Update AudioVisualizer component to fix timing alignment
+  const AudioVisualizer: React.FC<{ timeInSeconds: number }> = ({ timeInSeconds }) => {
+    const frame = useCurrentFrame();
+    const { fps } = useVideoConfig();
+    
+    const audioUrlToAnalyze = useMemo(() => {
+      return getAnalysisUrl(
+        metadata.videoType,
+        audioUrl,
+        vocalUrl,
+        instrumentalUrl,
+        littleVocalUrl
+      );
+    }, [metadata.videoType, audioUrl, vocalUrl, instrumentalUrl, littleVocalUrl]);
+  
+    const { isAnalyzing, error, volumeData } = useAudioAnalyzer(audioUrlToAnalyze);
+    
+    // Calculate the correct data range without the padding offset
+    const startSecond = Math.max(0, Math.floor(timeInSeconds) - 20);
+    const endSecond = Math.min(
+      volumeData.length - 80, // Subtract total padding (40 at start + 40 at end)
+      Math.floor(timeInSeconds) + 20
+    );
+  
+    if (error) {
+      return (
+        <div style={{
+          width: VISUALIZER_WIDTH,
+          height: VISUALIZER_HEIGHT,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(0, 0, 0, 0.3)',
+          color: '#ff4444',
+          fontSize: '14px'
+        }}>
+          Failed to analyze audio
+        </div>
+      );
+    }
+    
+    const getBoundaryEffect = (second: number, timeInSeconds: number): number => {
+      const distance = Math.abs(second - timeInSeconds);
+      if (distance > 18) {
+        return 1.0 - ((distance - 18) / 2) * 0.3;
+      }
+      return 1.0;
+    };
+  
+    return (
+      <div style={{
+        width: VISUALIZER_WIDTH,
+        height: VISUALIZER_HEIGHT,
+        display: 'flex',
+        flexDirection: 'column',
+        marginTop: '10px',
+        padding: '10px 10px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          height: VISUALIZER_HEIGHT,
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-end'
+          }}>
+            <div style={{
+              display: 'flex',
+              transform: `translateX(${-((timeInSeconds % 1) * 4)}px)`
+            }}>
+              {Array.from({ length: endSecond - startSecond + 1 }, (_, i) => {
+                const second = startSecond + i;
+                const boundaryMultiplier = getBoundaryEffect(second, timeInSeconds);
+                const isCenter = second === Math.floor(timeInSeconds);
+                const distanceFromCenter = Math.abs(second - timeInSeconds);
+                const opacity = 1 - (distanceFromCenter / 20) * 0.5;
+                
+                // Get volume data with correct index (add 40 to account for initial padding)
+                const volume = volumeData[second + 40] || 0.05;
+                const scaledVolume = Math.min(1, volume * 3.5) * boundaryMultiplier;
+
+                return (
+                  <div
+                    key={second}
+                    style={{
+                      width: '3px',
+                      marginRight: '1px',
+                      height: `${scaledVolume * VISUALIZER_HEIGHT * 0.8}px`,
+                      backgroundColor: isCenter ? '#1DB954' : `rgba(255, 255, 255, ${opacity})`,
+                      borderRadius: '4px',
+                      transition: 'height 80ms ease-out'
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <AbsoluteFill
       style={{
@@ -345,6 +462,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
             )}
           </div>
           <VideoTypeLabel>{metadata.videoType}</VideoTypeLabel>
+          <AudioVisualizer timeInSeconds={currentTimeInSeconds} />
         </AlbumCoverContainer>
 
         {/* Lyrics Container */}

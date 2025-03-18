@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { LyricEntry } from '../types';
 import VideoPreview from './VideoPreview';
 import { Input, Select, InputLabel } from './StyledComponents';
+import { analyzeAudio } from '../utils/audioAnalyzer';
 
 const FormContainer = styled.div`
   max-width: 800px;
@@ -237,7 +238,26 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     }, 0);
   };
 
-  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'main' | 'instrumental' | 'vocal' | 'littleVocal') => {
+  // New function to handle audio analysis when an audio file is uploaded
+  const analyzeAudioFile = async (file: File): Promise<void> => {
+    if (!file) return;
+    
+    // Create a temporary URL for the file
+    const url = URL.createObjectURL(file);
+    
+    try {
+      // Start analysis (this will cache the results)
+      await analyzeAudio(url);
+      console.log(`Analysis complete for ${file.name}`);
+    } catch (err) {
+      console.error(`Error analyzing audio file ${file.name}:`, err);
+    } finally {
+      // Clean up the URL
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleAudioChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'main' | 'instrumental' | 'vocal' | 'littleVocal') => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (!file.type.startsWith('audio/')) {
@@ -259,8 +279,13 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
           setLittleVocalFile(file);
           break;
       }
+      
       setError(null);
-      updateFiles(); // Make sure this is called after setting the file
+      
+      // Analyze the audio file right after upload
+      await analyzeAudioFile(file);
+      
+      updateFiles(); // Call this after analysis is complete
     }
   };
 
@@ -336,6 +361,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
             return;
           }
           setMainAudioFile(file);
+          // Analyze the audio file 
+          await analyzeAudioFile(file);
           break;
         case 'instrumental':
           if (!file.type.startsWith('audio/')) {
@@ -343,6 +370,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
             return;
           }
           setInstrumentalFile(file);
+          // Analyze the audio file
+          await analyzeAudioFile(file);
           break;
         case 'vocal':
           if (!file.type.startsWith('audio/')) {
@@ -350,6 +379,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
             return;
           }
           setVocalFile(file);
+          // Analyze the audio file
+          await analyzeAudioFile(file);
           break;
         case 'littleVocal':
           if (!file.type.startsWith('audio/')) {
@@ -357,6 +388,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
             return;
           }
           setLittleVocalFile(file);
+          // Analyze the audio file
+          await analyzeAudioFile(file);
           break;
         case 'lyrics':
           if (!file.name.endsWith('.json')) {
@@ -394,6 +427,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
           break;
       }
       setError(null);
+      updateFiles();
     }
   };
 
@@ -439,12 +473,16 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         const nameLower = file.name.toLowerCase();
         if (nameLower.includes('music')) {
           detectedInstrumental = file;
+          await analyzeAudioFile(file); // Analyze instrumental audio
         } else if (nameLower.includes('vocals')) {
           detectedVocal = file;
+          await analyzeAudioFile(file); // Analyze vocal audio
         } else if (nameLower.includes('+')) {
           detectedLittleVocal = file;
+          await analyzeAudioFile(file); // Analyze little vocal audio
         } else {
           detectedMain = file;
+          await analyzeAudioFile(file); // Analyze main audio
         }
         continue;
       }

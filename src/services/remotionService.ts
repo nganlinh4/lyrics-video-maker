@@ -1,4 +1,5 @@
 import { LyricEntry } from '../types';
+import { getAnalysisUrl, analyzeAudio } from '../utils/audioAnalyzer';
 
 const SERVER_URL = 'http://localhost:3003';
 
@@ -133,6 +134,19 @@ export class RemotionService {
       if (!audioUrl) {
         throw new Error('Failed to upload main audio file');
       }
+      
+      // Pre-analyze the correct audio file based on video type to ensure visualization works correctly
+      const analysisUrl = getAnalysisUrl(
+        metadata.videoType,
+        audioUrl,
+        additionalAudioUrls.vocalUrl,
+        additionalAudioUrls.instrumentalUrl,
+        additionalAudioUrls.littleVocalUrl
+      );
+      
+      // Perform analysis before rendering to ensure data is cached
+      console.log(`Pre-analyzing audio for ${metadata.videoType} using URL: ${analysisUrl}`);
+      await analyzeAudio(analysisUrl);
 
       onProgress?.({
         progress: 0,

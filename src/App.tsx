@@ -6,6 +6,7 @@ import { LyricsVideoContent } from './components/LyricsVideo';
 import { RenderControl } from './components/RenderControl';
 import VideoPreview from './components/VideoPreview';
 import { LyricEntry, VideoMetadata, AudioFiles } from './types';
+import { analyzeAudio } from './utils/audioAnalyzer';
 
 const Container = styled.div`
   display: flex;
@@ -77,18 +78,37 @@ const App: React.FC = () => {
 
   // Separate URL management for audio and images
   useEffect(() => {
-    // Handle audio URLs
-    const newAudioUrls = {
-      main: audioFiles.main ? URL.createObjectURL(audioFiles.main) : '',
-      instrumental: audioFiles.instrumental ? URL.createObjectURL(audioFiles.instrumental) : '',
-      vocal: audioFiles.vocal ? URL.createObjectURL(audioFiles.vocal) : '',
-      littleVocal: audioFiles.littleVocal ? URL.createObjectURL(audioFiles.littleVocal) : ''
+    // Handle audio URLs and perform analysis when files change
+    const processAudio = async () => {
+      const newAudioUrls = {
+        main: audioFiles.main ? URL.createObjectURL(audioFiles.main) : '',
+        instrumental: audioFiles.instrumental ? URL.createObjectURL(audioFiles.instrumental) : '',
+        vocal: audioFiles.vocal ? URL.createObjectURL(audioFiles.vocal) : '',
+        littleVocal: audioFiles.littleVocal ? URL.createObjectURL(audioFiles.littleVocal) : ''
+      };
+      
+      setAudioUrls(newAudioUrls);
+      
+      // Perform audio analysis on all audio URLs
+      // Note: This is a fallback in case the UploadForm didn't analyze the files
+      // The analysis function internally checks for cached results
+      for (const [key, url] of Object.entries(newAudioUrls)) {
+        if (url) {
+          try {
+            // This won't repeat the analysis if already performed during upload
+            await analyzeAudio(url);
+          } catch (err) {
+            console.error(`Error analyzing ${key} audio:`, err);
+          }
+        }
+      }
     };
-    setAudioUrls(newAudioUrls);
-
+    
+    processAudio();
+    
     // Cleanup function for audio URLs
     return () => {
-      Object.values(newAudioUrls).forEach(url => {
+      Object.values(audioUrls).forEach(url => {
         if (url) URL.revokeObjectURL(url);
       });
     };
