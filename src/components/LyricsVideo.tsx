@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { useAudioAnalyzer, getAnalysisUrl } from '../utils/audioAnalyzer';
 
 // Font-related constants
-const FONT_FAMILY = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+export const FONT_FAMILY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif";
 
 // Spotify-inspired constants (scaled up by 1.5 for 1080p)
 const LYRIC_HEIGHT = 98; // Increased from 65
@@ -608,6 +608,7 @@ const CenteredMetadataContainer = styled.div`
   z-index: 2;
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-family: ${FONT_FAMILY};
 `;
 
 const AlbumCoverContainer = styled.div`
@@ -635,10 +636,12 @@ const ArtistName = styled.h2`
   margin: 0;
   font-weight: 600;
   opacity: 0.9;
+  font-family: ${FONT_FAMILY};
 `;
 
 const SongTitle = styled.h1`
   font-size: 48px;
   margin: 5px 0;
   font-weight: 700;
+  font-family: ${FONT_FAMILY};
 `;
