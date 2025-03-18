@@ -23,6 +23,11 @@ const ACTIVE_COLOR = [30, 215, 96];
 const INACTIVE_WEIGHT = 400;
 const ACTIVE_WEIGHT = 700;
 
+// Add these new effects near the top with other constants
+const BACKGROUND_HORIZONTAL_RANGE = 20; // pixels of horizontal movement
+const BACKGROUND_VERTICAL_RANGE = 15; // pixels of vertical movement
+const BACKGROUND_ZOOM_RANGE = 0.1; // 10% zoom range
+
 // Utility function to get average color from an image
 const getAverageColor = (imgElement: HTMLImageElement): number[] => {
   const canvas = document.createElement('canvas');
@@ -151,9 +156,24 @@ export const LyricsVideoContent: React.FC<Props> = ({
     return Math.abs(Math.sin(frame / (fps * 0.8)) * 0.5) + 0.5;
   }, [frame, fps]);
 
-  // Parallax effect
-  const parallaxOffset = useMemo(() => {
-    return Math.sin(frame / fps * 0.2) * 10;
+  // Replace the simple parallax effect with complex background animations
+  const backgroundEffects = useMemo(() => {
+    // Use different frequencies for each movement to create unpredictable patterns
+    const horizontalOffset = Math.sin(frame / fps * 0.2) * BACKGROUND_HORIZONTAL_RANGE + 
+                           Math.cos(frame / fps * 0.13) * (BACKGROUND_HORIZONTAL_RANGE * 0.5);
+    
+    const verticalOffset = Math.sin(frame / fps * 0.15) * BACKGROUND_VERTICAL_RANGE + 
+                          Math.cos(frame / fps * 0.23) * (BACKGROUND_VERTICAL_RANGE * 0.7);
+    
+    // Create a zooming effect that pulses in and out
+    const zoomFactor = 1 + (Math.sin(frame / fps * 0.17) * BACKGROUND_ZOOM_RANGE) +
+                          (Math.cos(frame / fps * 0.11) * (BACKGROUND_ZOOM_RANGE * 0.5));
+    
+    return {
+      transform: `scale(${zoomFactor})`,
+      backgroundPosition: `calc(50% + ${horizontalOffset}px) calc(50% + ${verticalOffset}px)`,
+      transition: 'transform 0.1s ease-out'
+    };
   }, [frame, fps]);
 
   // Find the active lyric index
@@ -357,40 +377,25 @@ export const LyricsVideoContent: React.FC<Props> = ({
     <AbsoluteFill
       style={{
         backgroundColor: '#000',
+        overflow: 'hidden',
+        position: 'relative'
+      }}
+    >
+      {/* Background container with effects */}
+      <div style={{
+        position: 'absolute',
+        top: -50,  // Extra padding to prevent edges showing during animation
+        left: -50,
+        right: -50,
+        bottom: -50,
         backgroundImage: backgroundImageUrl 
           ? `linear-gradient(rgba(0, 0, 0, ${0.4 + backgroundPulse}), rgba(0, 0, 0, ${0.5 + backgroundPulse})), url(${backgroundImageUrl})` 
           : 'linear-gradient(180deg, #121212 0%, #060606 100%)',
         backgroundSize: 'cover',
-        backgroundPosition: `calc(50% + ${parallaxOffset}px) center`,
-        backgroundRepeat: 'no-repeat',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        fontFamily: FONT_FAMILY
-      }}
-    >
-      {/* Moving font loading to the top level */}
-      <link 
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" 
-        rel="stylesheet" 
-      />
-      
-      {/* Audio elements */}
-      {getAudioConfig().map((audio: AudioConfig, index: number) => {
-        console.log('Rendering audio element:', { type: metadata.videoType, src: audio.src, volume: audio.volume });
-        return (
-          <Audio 
-            key={`audio-${metadata.videoType}-${audio.src}-${index}`}
-            src={audio.src}
-            volume={audio.volume}
-            playbackRate={1}
-            muted={false}
-          />
-        );
-      })}
+        ...backgroundEffects,
+      }} />
 
-      {/* Background effects layer */}
+      {/* Rest of the content */}
       <div
         style={{
           position: 'absolute',
@@ -398,7 +403,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
           left: 0,
           right: 0,
           bottom: 0,
-          backdropFilter: `blur(${2 + audioReactiveEffect * 4}px)`,
+          backdropFilter: `blur(${2 + audioReactiveEffect * 8}px)`,
           backgroundColor: 'rgba(0, 0, 0, 0.2)',
           zIndex: 1,
         }}
