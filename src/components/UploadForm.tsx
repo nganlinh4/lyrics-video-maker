@@ -43,6 +43,17 @@ const DropZone = styled.div<{ isDragging?: boolean }>`
   }
 `;
 
+const BulkDropZone = styled(DropZone)`
+  background-color: #f8f9fa;
+  border: 3px dashed #6e8efb;
+  padding: 3rem;
+  margin-bottom: 2rem;
+
+  &:hover {
+    background-color: rgba(110, 142, 251, 0.15);
+  }
+`;
+
 const PreviewImage = styled.img`
   max-width: 100px;
   max-height: 100px;
@@ -118,6 +129,15 @@ const ErrorMessage = styled.div`
   background-color: #ffebee;
   border-radius: 4px;
   border-left: 4px solid #e53935;
+`;
+
+const FileTypeTag = styled.span`
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+  background-color: #e3f2fd;
+  color: #1976d2;
 `;
 
 interface AudioFiles {
@@ -377,6 +397,109 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     }
   };
 
+  const handleBulkDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(prev => ({ ...prev, bulk: false }));
+
+    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+
+    const files = Array.from(e.dataTransfer.files);
+    setError(null);
+
+    // Categorize files
+    let detectedMain: File | null = null;
+    let detectedInstrumental: File | null = null;
+    let detectedVocal: File | null = null;
+    let detectedLittleVocal: File | null = null;
+    let detectedLyrics: File | null = null;
+    let detectedAlbumArt: File | null = null;
+    let detectedBackground: File | null = null;
+
+    // Process each file
+    for (const file of files) {
+      // Handle JSON files (lyrics)
+      if (file.name.endsWith('.json')) {
+        try {
+          const text = await file.text();
+          const parsedLyrics = JSON.parse(text);
+          if (Array.isArray(parsedLyrics)) {
+            setLyrics(parsedLyrics);
+            detectedLyrics = file;
+            continue;
+          }
+        } catch (err) {
+          setError('Invalid lyrics JSON file');
+          return;
+        }
+      }
+
+      // Handle audio files
+      if (file.type.startsWith('audio/')) {
+        const nameLower = file.name.toLowerCase();
+        if (nameLower.includes('music')) {
+          detectedInstrumental = file;
+        } else if (nameLower.includes('vocals')) {
+          detectedVocal = file;
+        } else if (nameLower.includes('+')) {
+          detectedLittleVocal = file;
+        } else {
+          detectedMain = file;
+        }
+        continue;
+      }
+
+      // Handle image files
+      if (file.type.startsWith('image/')) {
+        // Create an image object to check dimensions
+        const img = new Image();
+        const imageUrl = URL.createObjectURL(file);
+        
+        await new Promise<void>((resolve) => {
+          img.onload = () => {
+            URL.revokeObjectURL(imageUrl);
+            // Check if image is square (allowing for small rounding differences)
+            const isSquare = Math.abs(img.width - img.height) <= 2;
+            if (isSquare) {
+              detectedAlbumArt = file;
+            } else {
+              detectedBackground = file;
+            }
+            resolve();
+          };
+          img.src = imageUrl;
+        });
+      }
+    }
+
+    // Update state with detected files
+    if (detectedMain) setMainAudioFile(detectedMain);
+    if (detectedInstrumental) setInstrumentalFile(detectedInstrumental);
+    if (detectedVocal) setVocalFile(detectedVocal);
+    if (detectedLittleVocal) setLittleVocalFile(detectedLittleVocal);
+    if (detectedLyrics) setLyricsFile(detectedLyrics);
+    if (detectedAlbumArt) setAlbumArtFile(detectedAlbumArt);
+    if (detectedBackground) setBackgroundFile(detectedBackground);
+
+    // Update the form
+    setTimeout(() => {
+      const audioFiles: AudioFiles = {
+        main: detectedMain,
+        instrumental: detectedInstrumental,
+        vocal: detectedVocal,
+        littleVocal: detectedLittleVocal
+      };
+
+      const metadata: VideoMetadata = {
+        artist,
+        songTitle,
+        videoType
+      };
+
+      onFilesChange(audioFiles, lyrics, detectedAlbumArt, detectedBackground, metadata);
+    }, 0);
+  };
+
   const resetForm = () => {
     setMainAudioFile(null);
     setInstrumentalFile(null);
@@ -412,6 +535,42 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     <FormContainer>
       <h2>Upload Files</h2>
       
+      <InfoBox>
+        <strong>Quick Upload:</strong> Drop all your files at once! The system will automatically detect:
+        <ul>
+          <li>Audio files based on names (containing "music", "vocals", "+")</li>
+          <li>JSON files for lyrics</li>
+          <li>Square images for album art</li>
+          <li>Non-square images for background</li>
+        </ul>
+      </InfoBox>
+
+      <BulkDropZone
+        isDragging={isDragging['bulk']}
+        onDrop={handleBulkDrop}
+        onDragOver={handleDragOver}
+        onDragEnter={(e) => handleDragEnter(e, 'bulk')}
+        onDragLeave={(e) => handleDragLeave(e, 'bulk')}
+      >
+        <DropText>
+          <strong>Drop All Files Here</strong>
+          <br />
+          Drag and drop all your files at once for automatic categorization
+        </DropText>
+        {(mainAudioFile || instrumentalFile || vocalFile || littleVocalFile || lyricsFile || albumArtFile || backgroundFile) && (
+          <div style={{ marginTop: '1rem' }}>
+            <h4>Detected Files:</h4>
+            {mainAudioFile && <FileName>Main Audio: {mainAudioFile.name}<FileTypeTag>Main</FileTypeTag></FileName>}
+            {instrumentalFile && <FileName>Instrumental: {instrumentalFile.name}<FileTypeTag>Music</FileTypeTag></FileName>}
+            {vocalFile && <FileName>Vocals: {vocalFile.name}<FileTypeTag>Vocals</FileTypeTag></FileName>}
+            {littleVocalFile && <FileName>Little Vocal: {littleVocalFile.name}<FileTypeTag>Little</FileTypeTag></FileName>}
+            {lyricsFile && <FileName>Lyrics: {lyricsFile.name}<FileTypeTag>JSON</FileTypeTag></FileName>}
+            {albumArtFile && <FileName>Album Art: {albumArtFile.name}<FileTypeTag>Square</FileTypeTag></FileName>}
+            {backgroundFile && <FileName>Background: {backgroundFile.name}<FileTypeTag>Background</FileTypeTag></FileName>}
+          </div>
+        )}
+      </BulkDropZone>
+
       <InfoBox>
         <strong>Note:</strong> You'll need the following files:
         <ol>
