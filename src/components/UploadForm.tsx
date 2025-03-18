@@ -5,6 +5,14 @@ import VideoPreview from './VideoPreview';
 import { Input, Select, InputLabel } from './StyledComponents';
 import { analyzeAudio } from '../utils/audioAnalyzer';
 
+const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number) => {
+  let timeoutId: NodeJS.Timeout;
+  return function (...args: Parameters<T>) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(null, args), delay);
+  };
+};
+
 const FormContainer = styled.div`
   max-width: 800px;
   margin: 2rem auto;
@@ -206,36 +214,50 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     onFilesChange(audioFiles, lyrics, albumArtFile, backgroundFile, metadata);
   };
 
+  const debouncedUpdateFiles = React.useCallback(
+    debounce((newMetadata: VideoMetadata) => {
+      onFilesChange(
+        { main: mainAudioFile, instrumental: instrumentalFile, vocal: vocalFile, littleVocal: littleVocalFile },
+        lyrics,
+        albumArtFile,
+        backgroundFile,
+        newMetadata
+      );
+    }, 500), // Wait 500ms after typing stops before updating
+    [mainAudioFile, instrumentalFile, vocalFile, littleVocalFile, lyrics, albumArtFile, backgroundFile]
+  );
+
   const handleMetadataChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     
-    // Update the state based on which field changed
+    // Immediately update the local state
     if (name === 'artist') {
       setArtist(value);
     } else if (name === 'songTitle') {
       setSongTitle(value);
     } else if (name === 'videoType') {
       setVideoType(value as VideoMetadata['videoType']);
-    }
-
-    // Use a proper React effect instead of setTimeout to ensure state is updated
-    setTimeout(() => {
-      const metadata: VideoMetadata = {
-        artist: name === 'artist' ? value : artist,
-        songTitle: name === 'songTitle' ? value : songTitle,
-        videoType: name === 'videoType' ? value as VideoMetadata['videoType'] : videoType
-      };
-
+      // For video type, update immediately since it's a select
       onFilesChange(
         { main: mainAudioFile, instrumental: instrumentalFile, vocal: vocalFile, littleVocal: littleVocalFile },
         lyrics,
         albumArtFile,
         backgroundFile,
-        metadata
+        { artist, songTitle, videoType: value as VideoMetadata['videoType'] }
       );
-    }, 0);
+      return;
+    }
+
+    // Debounce the preview update for text inputs
+    const newMetadata: VideoMetadata = {
+      artist: name === 'artist' ? value : artist,
+      songTitle: name === 'songTitle' ? value : songTitle,
+      videoType
+    };
+    
+    debouncedUpdateFiles(newMetadata);
   };
 
   // New function to handle audio analysis when an audio file is uploaded
@@ -471,19 +493,22 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       // Handle audio files
       if (file.type.startsWith('audio/')) {
         const nameLower = file.name.toLowerCase();
-        if (nameLower.includes('music') || nameLower.includes('instrumental')) {
+        if (nameLower.includes('[music+vocals]')) {
+          detectedLittleVocal = file;
+          await analyzeAudioFile(file);
+        } else if (nameLower.includes('music') || nameLower.includes('instrumental')) {
           detectedInstrumental = file;
-          await analyzeAudioFile(file); // Analyze instrumental audio
+          await analyzeAudioFile(file);
         } else if (nameLower.includes('vocal') || nameLower.includes('voc')) {
-          if (nameLower.includes('little') || nameLower.includes('low') || nameLower.includes('+')) {
+          if (nameLower.includes('little') || nameLower.includes('low')) {
             detectedLittleVocal = file;
           } else {
             detectedVocal = file;
           }
-          await analyzeAudioFile(file); // Analyze vocal audio
+          await analyzeAudioFile(file);
         } else {
           detectedMain = file;
-          await analyzeAudioFile(file); // Analyze main audio
+          await analyzeAudioFile(file);
         }
         continue;
       }
