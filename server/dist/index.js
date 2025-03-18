@@ -9,6 +9,9 @@ const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const bundler_1 = require("@remotion/bundler");
 const renderer_1 = require("@remotion/renderer");
+// Set Remotion environment variables for GPU acceleration
+process.env.REMOTION_CHROME_MODE = "chrome-for-testing";
+process.env.REMOTION_GL = "vulkan";
 const app = (0, express_1.default)();
 const port = process.env.PORT || 3003;
 // Ensure directories exist
@@ -48,7 +51,11 @@ app.post('/upload/:type', upload.single('file'), (req, res) => {
 // Render video endpoint
 app.post('/render', async (req, res) => {
     try {
-        const { audioFile, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl } = req.body;
+        const { audioFile, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl, metadata = {
+            artist: 'Unknown Artist',
+            songTitle: 'Unknown Song',
+            videoType: 'Lyrics Video'
+        }, instrumentalUrl, vocalUrl, littleVocalUrl } = req.body;
         if (!audioFile || !lyrics || !durationInSeconds) {
             return res.status(400).json({ error: 'Missing required parameters' });
         }
@@ -79,7 +86,11 @@ app.post('/render', async (req, res) => {
                 lyrics,
                 durationInSeconds,
                 albumArtUrl,
-                backgroundImageUrl
+                backgroundImageUrl,
+                metadata,
+                instrumentalUrl,
+                vocalUrl,
+                littleVocalUrl
             }
         });
         console.log('Available compositions:', compositions.map(c => c.id));
@@ -91,13 +102,17 @@ app.post('/render', async (req, res) => {
                 lyrics,
                 durationInSeconds,
                 albumArtUrl,
-                backgroundImageUrl
+                backgroundImageUrl,
+                metadata,
+                instrumentalUrl,
+                vocalUrl,
+                littleVocalUrl
             },
         });
         // Force the composition duration to match our calculated duration
         composition.durationInFrames = durationInFrames;
-        // Render the video
-        console.log('Starting rendering process...');
+        // Render the video with GPU acceleration
+        console.log('Starting rendering process with Vulkan GPU acceleration...');
         console.log('Using composition duration:', composition.durationInFrames, 'frames');
         await (0, renderer_1.renderMedia)({
             composition,
@@ -109,8 +124,18 @@ app.post('/render', async (req, res) => {
                 lyrics,
                 durationInSeconds,
                 albumArtUrl,
-                backgroundImageUrl
+                backgroundImageUrl,
+                metadata,
+                instrumentalUrl,
+                vocalUrl,
+                littleVocalUrl
             },
+            chromiumOptions: {
+                disableWebSecurity: true,
+                ignoreCertificateErrors: true,
+                gl: "vulkan"
+            },
+            concurrency: 20
         });
         const videoUrl = `http://localhost:${port}/output/${outputFile}`;
         res.json({ videoUrl });
@@ -125,4 +150,7 @@ app.post('/render', async (req, res) => {
 });
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
+    console.log('GPU settings:');
+    console.log('REMOTION_CHROME_MODE:', process.env.REMOTION_CHROME_MODE);
+    console.log('REMOTION_GL:', process.env.REMOTION_GL);
 });

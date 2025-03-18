@@ -161,7 +161,8 @@ app.post('/render', async (req, res) => {
         disableWebSecurity: true,
         ignoreCertificateErrors: true,
         gl: "vulkan"
-      }
+      },
+      concurrency: 20
     });
 
     const videoUrl = `http://localhost:${port}/output/${outputFile}`;
