@@ -75,8 +75,8 @@ app.post('/render', async (req, res) => {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
-    const fps = 30;
-    const durationInFrames = Math.max(30, Math.ceil(durationInSeconds * fps));
+    const fps = 60;
+    const durationInFrames = Math.max(60, Math.ceil(durationInSeconds * fps));
     
     const outputFile = `lyrics-video-${Date.now()}.mp4`;
     const outputPath = path.join(outputDir, outputFile);
@@ -164,7 +164,8 @@ app.post('/render', async (req, res) => {
         gl: "vulkan"
       },
       concurrency: 20,
-      logLevel: 'verbose'
+      logLevel: 'verbose',
+      hardwareAcceleration: 'if-possible',
     });
 
     const videoUrl = `http://localhost:${port}/output/${outputFile}`;

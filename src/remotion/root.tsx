@@ -37,9 +37,9 @@ const VideoComponentWrapper: React.FC<Record<string, unknown>> = (props) => {
 export const RemotionRoot: React.FC = () => {
   const commonProps = {
     component: VideoComponentWrapper,
-    fps: 30,
-    width: 1280,
-    height: 720,
+    fps: 60,
+    width: 1920,
+    height: 1080,
     durationInFrames: 180
   };
 

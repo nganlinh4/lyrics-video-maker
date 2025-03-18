@@ -6,22 +6,21 @@ import styled from 'styled-components';
 // Font-related constants
 const FONT_FAMILY = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
 
-// Spotify-inspired constants
-const LYRIC_HEIGHT = 65; // Height of each lyric line
-const LYRIC_MARGIN = 24; // Spacing between lines
-const TRANSITION_DURATION = 0.5; // Duration in seconds for lyric transitions
-const BASE_POSITION = 720 / 2 - 30; // Center position (adjusted from height / 2 + CENTER_OFFSET)
-const ALBUM_COVER_SIZE = 300; // Size of the album cover
-const ALBUM_COVER_MARGIN = 110; // Increased margin from the left edge
+// Spotify-inspired constants (scaled up by 1.5 for 1080p)
+const LYRIC_HEIGHT = 98; // Increased from 65
+const LYRIC_MARGIN = 36; // Increased from 24
+const TRANSITION_DURATION = 0.5;
+const BASE_POSITION = 1080 / 2 - 45; // Adjusted for new height
+const ALBUM_COVER_SIZE = 450; // Increased from 300
+const ALBUM_COVER_MARGIN = 165; // Increased from 110
 
-// New styling constants
-const INACTIVE_FONT_SIZE = 36;
-const ACTIVE_FONT_SIZE = 40;
+// Styling constants (scaled up for 1080p)
+const INACTIVE_FONT_SIZE = 54; // Increased from 36
+const ACTIVE_FONT_SIZE = 60; // Increased from 40
 const INACTIVE_COLOR = [255, 255, 255];
 const ACTIVE_COLOR = [30, 215, 96];
-// Font weight variation constants
-const INACTIVE_WEIGHT = 400;  // normal
-const ACTIVE_WEIGHT = 700;    // bold
+const INACTIVE_WEIGHT = 400;
+const ACTIVE_WEIGHT = 700;
 
 // Utility function to get average color from an image
 const getAverageColor = (imgElement: HTMLImageElement): number[] => {
@@ -352,11 +351,11 @@ export const LyricsVideoContent: React.FC<Props> = ({
         <div
           style={{
             width: '85%',
-            maxWidth: '900px',
+            maxWidth: '1350px', // Increased from 900
             textAlign: 'center',
             height: '100%',
             position: 'relative',
-            marginLeft: 400, // Direct value instead of using a constant
+            marginLeft: 600, // Increased from 400
           }}
         >
           {lyrics?.map((lyric: LyricEntry, index: number) => {
@@ -458,7 +457,7 @@ const MetadataContainer = styled.div`
 
 const CenteredMetadataContainer = styled.div`
   position: absolute;
-  top: calc(50% - ${ALBUM_COVER_SIZE / 2}px - 110px); /* Position 80px above album art */
+  top: calc(50% - ${ALBUM_COVER_SIZE / 2}px - 155px); /* Position 80px above album art */
   left: ${ALBUM_COVER_MARGIN}px;
   width: ${ALBUM_COVER_SIZE}px;
   text-align: center;
@@ -480,7 +479,7 @@ const AlbumCoverContainer = styled.div`
 const VideoTypeLabel = styled.div`
   color: white;
   font-family: ${FONT_FAMILY};
-  font-size: 32px;
+  font-size: 35px;
   font-weight: 600;
   text-align: center;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -488,14 +487,14 @@ const VideoTypeLabel = styled.div`
 `;
 
 const ArtistName = styled.h2`
-  font-size: 32px; // Increased from 24px
+  font-size: 48px; // Increased from 24px
   margin: 0;
   font-weight: 600;
   opacity: 0.9;
 `;
 
 const SongTitle = styled.h1`
-  font-size: 32px;
+  font-size: 48px;
   margin: 5px 0;
   font-weight: 700;
 `;

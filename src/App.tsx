@@ -142,7 +142,7 @@ const App: React.FC = () => {
 
   // Calculate whether to show preview and render controls
   const canShowPreview = audioFiles?.main && lyrics && durationInSeconds > 0;
-  const durationInFrames = Math.round(Math.max(30, durationInSeconds * 30));
+  const durationInFrames = Math.round(Math.max(60, durationInSeconds * 60));
 
   console.log('Audio Files:', audioFiles);
   console.log('Lyrics:', lyrics);
@@ -170,10 +170,14 @@ const App: React.FC = () => {
               key={`player-${metadata.videoType}-${albumArtUrl}-${backgroundUrl}-${audioUrls.main}-${audioUrls.instrumental}-${audioUrls.vocal}-${audioUrls.littleVocal}`}
               component={LyricsVideoContent}
               durationInFrames={durationInFrames}
-              compositionWidth={1280}
-              compositionHeight={720}
-              fps={30}
+              compositionWidth={1920}
+              compositionHeight={1080}
+              fps={60}
               controls
+              style={{
+                width: '100%',
+                aspectRatio: '16/9',
+              }}
               inputProps={{
                 audioUrl: audioUrls.main,
                 instrumentalUrl: audioUrls.instrumental,
