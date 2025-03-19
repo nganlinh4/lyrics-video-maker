@@ -67,6 +67,7 @@ app.post('/render', async (req, res) => {
       durationInSeconds, 
       albumArtUrl, 
       backgroundImageUrl, 
+      backgroundImagesMap = {}, // Add support for background images map
       metadata = {
         artist: 'Unknown Artist',
         songTitle: 'Unknown Song',
@@ -117,6 +118,7 @@ app.post('/render', async (req, res) => {
         durationInSeconds,
         albumArtUrl,
         backgroundImageUrl,
+        backgroundImagesMap, // Include backgroundImagesMap here
         metadata,
         instrumentalUrl,
         vocalUrl,
@@ -134,6 +136,7 @@ app.post('/render', async (req, res) => {
         durationInSeconds,
         albumArtUrl,
         backgroundImageUrl,
+        backgroundImagesMap, // Include backgroundImagesMap here
         metadata,
         instrumentalUrl,
         vocalUrl,
@@ -159,6 +162,7 @@ app.post('/render', async (req, res) => {
         durationInSeconds,
         albumArtUrl,
         backgroundImageUrl,
+        backgroundImagesMap, // Include backgroundImagesMap here
         metadata,
         instrumentalUrl,
         vocalUrl,

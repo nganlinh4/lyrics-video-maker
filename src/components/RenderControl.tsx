@@ -201,13 +201,27 @@ export const RenderControl: React.FC<RenderControlProps> = ({
           additionalUrls.littleVocalUrl = URL.createObjectURL(littleVocalFile);
         }
 
+        // Create background URLs map for all video types
+        const backgroundImagesMap: { [key: string]: string } = {};
+        Object.entries(backgroundFiles).forEach(([bgVideoType, bgFile]) => {
+          if (bgFile) {
+            backgroundImagesMap[bgVideoType] = URL.createObjectURL(bgFile);
+          }
+        });
+
+        // Get the specific background for this video type, or fall back to the default
+        const currentBackgroundUrl = backgroundFiles[videoType] 
+          ? URL.createObjectURL(backgroundFiles[videoType]!) 
+          : (backgroundFile ? URL.createObjectURL(backgroundFile) : undefined);
+
         const videoPath = await remotionService.renderVideo(
           audioFile,
           lyrics,
           durationInSeconds,
           {
             albumArtUrl: albumArtFile ? URL.createObjectURL(albumArtFile) : undefined,
-            backgroundImageUrl: backgroundFile ? URL.createObjectURL(backgroundFile) : undefined,
+            backgroundImageUrl: currentBackgroundUrl,
+            backgroundImagesMap,
             metadata: { ...metadata, videoType },
             ...additionalUrls
           },
@@ -222,9 +236,21 @@ export const RenderControl: React.FC<RenderControlProps> = ({
 
         // Clean up URLs
         Object.values(additionalUrls).forEach(url => URL.revokeObjectURL(url));
+        if (currentBackgroundUrl) URL.revokeObjectURL(currentBackgroundUrl);
 
         // Add to rendered videos list
         setRenderedVideos(prev => [...prev, { type: videoType, url: videoPath }]);
+      }
+
+      // Clean up background URLs after all videos are rendered
+      // Store backgroundImagesMap URLs in a separate array before the loop ends
+      const backgroundUrlsToCleanup: string[] = [];
+      for (const videoType of videoTypes) {
+        if (backgroundFiles[videoType]) {
+          const url = URL.createObjectURL(backgroundFiles[videoType]!);
+          backgroundUrlsToCleanup.push(url);
+          URL.revokeObjectURL(url);
+        }
       }
 
       setIsRendering(false);

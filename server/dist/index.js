@@ -57,7 +57,8 @@ app.post('/render', async (req, res) => {
     res.flushHeaders();
     try {
         const { compositionId = 'lyrics-video', // Get compositionId from request, fallback to default
-        audioFile, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl, metadata = {
+        audioFile, lyrics, durationInSeconds, albumArtUrl, backgroundImageUrl, backgroundImagesMap = {}, // Add support for background images map
+        metadata = {
             artist: 'Unknown Artist',
             songTitle: 'Unknown Song',
             videoType: 'Lyrics Video'
@@ -93,6 +94,7 @@ app.post('/render', async (req, res) => {
                 durationInSeconds,
                 albumArtUrl,
                 backgroundImageUrl,
+                backgroundImagesMap, // Include backgroundImagesMap here
                 metadata,
                 instrumentalUrl,
                 vocalUrl,
@@ -109,6 +111,7 @@ app.post('/render', async (req, res) => {
                 durationInSeconds,
                 albumArtUrl,
                 backgroundImageUrl,
+                backgroundImagesMap, // Include backgroundImagesMap here
                 metadata,
                 instrumentalUrl,
                 vocalUrl,
@@ -131,6 +134,7 @@ app.post('/render', async (req, res) => {
                 durationInSeconds,
                 albumArtUrl,
                 backgroundImageUrl,
+                backgroundImagesMap, // Include backgroundImagesMap here
                 metadata,
                 instrumentalUrl,
                 vocalUrl,

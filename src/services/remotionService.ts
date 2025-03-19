@@ -14,6 +14,7 @@ export interface RenderProgress {
 export interface RenderOptions {
   albumArtUrl?: string;
   backgroundImageUrl?: string;
+  backgroundImagesMap?: { [key: string]: string }; // Add backgroundImagesMap property
   instrumentalUrl?: string;
   vocalUrl?: string;
   littleVocalUrl?: string;
@@ -118,6 +119,26 @@ export class RemotionService {
             )
           : Promise.resolve(undefined)
       ];
+      
+      // Process backgroundImagesMap if provided
+      const backgroundImagesMapUrls: { [key: string]: string } = {};
+      if (options.backgroundImagesMap) {
+        for (const [videoType, url] of Object.entries(options.backgroundImagesMap)) {
+          if (url && url.startsWith('blob:')) {
+            try {
+              const uploadedUrl = await this.uploadFile(
+                await fetch(url)
+                  .then(r => r.blob())
+                  .then(b => new File([b], `background_${videoType.replace(/\s+/g, '_')}.jpg`)),
+                'image'
+              );
+              backgroundImagesMapUrls[videoType] = uploadedUrl;
+            } catch (error) {
+              console.error(`Failed to upload background image for ${videoType}:`, error);
+            }
+          }
+        }
+      }
 
       // Wait for all uploads to complete
       const [audioUrl, ...imageUrls] = await Promise.all([
@@ -168,6 +189,7 @@ export class RemotionService {
           durationInSeconds,
           albumArtUrl,
           backgroundImageUrl: backgroundUrl,
+          backgroundImagesMap: Object.keys(backgroundImagesMapUrls).length > 0 ? backgroundImagesMapUrls : undefined,
           metadata,
           instrumentalUrl: additionalAudioUrls.instrumentalUrl,
           vocalUrl: additionalAudioUrls.vocalUrl,
