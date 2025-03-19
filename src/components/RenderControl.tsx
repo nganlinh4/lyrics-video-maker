@@ -6,6 +6,9 @@ import { LyricsVideoContent } from './LyricsVideo';
 import VideoPreview from './VideoPreview';
 import remotionService from '../services/remotionService';
 
+// API URL for the server
+const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 const Container = styled.div`
   margin: 20px 0;
 `;
@@ -60,12 +63,13 @@ const InfoText = styled.div`
   color: #666;
 `;
 
-interface Props {
+interface RenderControlProps {
   audioFile: File | null;
   lyrics: LyricEntry[] | null;
   durationInSeconds: number;
-  albumArtFile: File | null;
-  backgroundFile: File | null;
+  albumArtFile?: File | null;
+  backgroundFile?: File | null;
+  backgroundFiles?: { [key: string]: File | null };
   metadata: {
     artist: string;
     songTitle: string;
@@ -77,12 +81,13 @@ interface Props {
   littleVocalFile?: File | null;
 }
 
-export const RenderControl: React.FC<Props> = ({
+export const RenderControl: React.FC<RenderControlProps> = ({
   audioFile,
   lyrics,
   durationInSeconds,
   albumArtFile,
   backgroundFile,
+  backgroundFiles = {},
   metadata,
   onRenderComplete,
   vocalFile,
@@ -94,6 +99,8 @@ export const RenderControl: React.FC<Props> = ({
   const [error, setError] = useState<string | null>(null);
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
   const [renderedVideos, setRenderedVideos] = useState<{ type: string; url: string }[]>([]);
+  const [status, setStatus] = useState<string>('');
+  const [renderingCompleted, setRenderingCompleted] = useState(false);
 
   const videoTypes = [
     'Lyrics Video',
@@ -226,6 +233,183 @@ export const RenderControl: React.FC<Props> = ({
       setError(err instanceof Error ? err.message : 'An error occurred');
       setIsRendering(false);
       setCurrentVersion(null);
+    }
+  };
+
+  const uploadFiles = async () => {
+    setStatus('Uploading files...');
+    setProgress(0);
+    setRenderingCompleted(false);
+    
+    try {
+      // Upload the main audio file
+      if (!audioFile) throw new Error('No audio file provided');
+      const audioFormData = new FormData();
+      audioFormData.append('file', audioFile);
+      const audioResponse = await fetch(`${apiUrl}/upload/audio`, {
+        method: 'POST',
+        body: audioFormData
+      });
+      
+      if (!audioResponse.ok) throw new Error('Failed to upload audio file');
+      const audioData = await audioResponse.json();
+      setProgress(20);
+      
+      // Upload optional instrumental file
+      let instrumentalData = null;
+      if (instrumentalFile) {
+        const instrumentalFormData = new FormData();
+        instrumentalFormData.append('file', instrumentalFile);
+        const instrumentalResponse = await fetch(`${apiUrl}/upload/audio`, {
+          method: 'POST',
+          body: instrumentalFormData
+        });
+        
+        if (instrumentalResponse.ok) {
+          instrumentalData = await instrumentalResponse.json();
+        }
+      }
+      setProgress(30);
+      
+      // Upload optional vocal file
+      let vocalData = null;
+      if (vocalFile) {
+        const vocalFormData = new FormData();
+        vocalFormData.append('file', vocalFile);
+        const vocalResponse = await fetch(`${apiUrl}/upload/audio`, {
+          method: 'POST',
+          body: vocalFormData
+        });
+        
+        if (vocalResponse.ok) {
+          vocalData = await vocalResponse.json();
+        }
+      }
+      setProgress(35);
+      
+      // Upload optional little vocal file
+      let littleVocalData = null;
+      if (littleVocalFile) {
+        const littleVocalFormData = new FormData();
+        littleVocalFormData.append('file', littleVocalFile);
+        const littleVocalResponse = await fetch(`${apiUrl}/upload/audio`, {
+          method: 'POST',
+          body: littleVocalFormData
+        });
+        
+        if (littleVocalResponse.ok) {
+          littleVocalData = await littleVocalResponse.json();
+        }
+      }
+      setProgress(40);
+      
+      // Upload album art file (if provided)
+      let albumArtData = null;
+      if (albumArtFile) {
+        const albumArtFormData = new FormData();
+        albumArtFormData.append('file', albumArtFile);
+        const albumArtResponse = await fetch(`${apiUrl}/upload/image`, {
+          method: 'POST',
+          body: albumArtFormData
+        });
+        
+        if (albumArtResponse.ok) {
+          albumArtData = await albumArtResponse.json();
+        }
+      }
+      setProgress(50);
+      
+      // Upload background images for each version (if provided)
+      const backgroundDataMap: { [key: string]: any } = {};
+      
+      // Upload all background files
+      for (const [videoType, bgFile] of Object.entries(backgroundFiles)) {
+        if (bgFile) {
+          const bgFormData = new FormData();
+          bgFormData.append('file', bgFile);
+          const bgResponse = await fetch(`${apiUrl}/upload/image`, {
+            method: 'POST',
+            body: bgFormData
+          });
+          
+          if (bgResponse.ok) {
+            backgroundDataMap[videoType] = await bgResponse.json();
+          }
+        }
+      }
+      
+      setProgress(60);
+      
+      // Start rendering with all uploaded files
+      setStatus('Starting rendering process...');
+      
+      const renderData = {
+        audioFile: audioData.filename,
+        lyrics,
+        durationInSeconds,
+        albumArtUrl: albumArtData ? `${apiUrl}/uploads/${albumArtData.filename}` : undefined,
+        backgroundImageUrl: backgroundDataMap[metadata.videoType] 
+          ? `${apiUrl}/uploads/${backgroundDataMap[metadata.videoType].filename}` 
+          : undefined,
+        backgroundImagesMap: Object.entries(backgroundDataMap).reduce((acc: { [key: string]: string }, [type, data]: [string, any]) => {
+          acc[type] = `${apiUrl}/uploads/${data.filename}`;
+          return acc;
+        }, {}),
+        metadata,
+        instrumentalUrl: instrumentalData ? `${apiUrl}/uploads/${instrumentalData.filename}` : undefined,
+        vocalUrl: vocalData ? `${apiUrl}/uploads/${vocalData.filename}` : undefined,
+        littleVocalUrl: littleVocalData ? `${apiUrl}/uploads/${littleVocalData.filename}` : undefined,
+      };
+      
+      console.log('Rendering with data:', renderData);
+
+      // Start the rendering process on the server
+      const renderResponse = await fetch(`${apiUrl}/render`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(renderData)
+      });
+      
+      if (!renderResponse.ok) {
+        throw new Error('Failed to start rendering process');
+      }
+      
+      const { id } = await renderResponse.json();
+      
+      // Poll for render status
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await fetch(`${apiUrl}/render/status/${id}`);
+          if (!statusResponse.ok) {
+            throw new Error('Failed to get render status');
+          }
+          
+          const statusData = await statusResponse.json();
+          
+          setStatus(statusData.status);
+          setProgress(statusData.progress);
+          
+          if (statusData.status === 'completed') {
+            clearInterval(pollInterval);
+            setRenderingCompleted(true);
+            onRenderComplete(`${apiUrl}/output/${statusData.outputFile}`);
+          } else if (statusData.status === 'failed') {
+            clearInterval(pollInterval);
+            throw new Error(statusData.error || 'Rendering failed');
+          }
+        } catch (err) {
+          clearInterval(pollInterval);
+          setError(err instanceof Error ? err.message : 'An error occurred during rendering');
+          setStatus('Failed');
+        }
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      setError('Failed to upload files');
+      setStatus('Failed');
     }
   };
 

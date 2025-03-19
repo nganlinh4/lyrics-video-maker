@@ -23,6 +23,9 @@ export interface Props {
   durationInSeconds: number;
   albumArtUrl?: string;
   backgroundImageUrl?: string;
+  backgroundImagesMap?: {
+    [key in VideoMetadata['videoType']]?: string;
+  };
   metadata: VideoMetadata;
   instrumentalUrl?: string;
   vocalUrl?: string;

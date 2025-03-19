@@ -114,10 +114,13 @@ export interface Props {
   durationInSeconds: number;
   albumArtUrl?: string;
   backgroundImageUrl?: string;
+  backgroundImagesMap?: {
+    [key in VideoMetadata['videoType']]?: string;
+  };
   metadata: VideoMetadata;
   instrumentalUrl?: string;
   vocalUrl?: string;
-  littleVocalUrl?: string; // Added new option for pre-mixed Little Vocal audio
+  littleVocalUrl?: string;
 }
 
 interface AudioConfig {
@@ -134,6 +137,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
   durationInSeconds,
   albumArtUrl,
   backgroundImageUrl,
+  backgroundImagesMap = {},
   metadata
 }) => {
   const frame = useCurrentFrame();
@@ -226,6 +230,16 @@ export const LyricsVideoContent: React.FC<Props> = ({
       transition: 'transform 0.1s ease-out'
     };
   }, [frame, fps]);
+
+  // Get the correct background image for the current video type
+  const currentBackgroundImage = useMemo(() => {
+    // First check if we have a specific background for this video type in the map
+    if (backgroundImagesMap && backgroundImagesMap[metadata.videoType]) {
+      return backgroundImagesMap[metadata.videoType];
+    }
+    // Fall back to the single backgroundImageUrl if provided
+    return backgroundImageUrl || '';
+  }, [backgroundImagesMap, metadata.videoType, backgroundImageUrl]);
 
   // Find the active lyric index
   const activeLyricIndex = useMemo(() => {
@@ -435,15 +449,15 @@ export const LyricsVideoContent: React.FC<Props> = ({
           position: 'relative'
         }}
       >
-        {/* Background container with effects */}
+        {/* Background container with effects - use currentBackgroundImage */}
         <div style={{
           position: 'absolute',
           top: -50,  // Extra padding to prevent edges showing during animation
           left: -50,
           right: -50,
           bottom: -50,
-          backgroundImage: backgroundImageUrl 
-            ? `linear-gradient(rgba(0, 0, 0, ${0.4 + backgroundPulse}), rgba(0, 0, 0, ${0.5 + backgroundPulse})), url(${backgroundImageUrl})` 
+          backgroundImage: currentBackgroundImage 
+            ? `linear-gradient(rgba(0, 0, 0, ${0.4 + backgroundPulse}), rgba(0, 0, 0, ${0.5 + backgroundPulse})), url(${currentBackgroundImage})` 
             : 'linear-gradient(180deg, #121212 0%, #060606 100%)',
           backgroundSize: 'cover',
           ...backgroundEffects,

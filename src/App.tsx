@@ -64,7 +64,6 @@ const App: React.FC = () => {
   });
   const [lyrics, setLyrics] = useState<LyricEntry[] | null>(null);
   const [albumArtFile, setAlbumArtFile] = useState<File | null>(null);
-  const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
   const [videoPath, setVideoPath] = useState<string>('');
   const [durationInSeconds, setDurationInSeconds] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +73,14 @@ const App: React.FC = () => {
     videoType: 'Lyrics Video'
   });
   const [albumArtUrl, setAlbumArtUrl] = useState('');
-  const [backgroundUrl, setBackgroundUrl] = useState('');
+
+  // Add state for multiple background files and urls
+  const [backgroundFiles, setBackgroundFiles] = useState<{
+    [key in VideoMetadata['videoType']]?: File | null;
+  }>({});
+  const [backgroundUrls, setBackgroundUrls] = useState<{
+    [key in VideoMetadata['videoType']]?: string;
+  }>({});
 
   // Separate URL management for audio and images
   useEffect(() => {
@@ -125,28 +131,40 @@ const App: React.FC = () => {
     }
   }, [albumArtFile]);
 
-  // Separate effect for background
+  // Update the effect for background URLs management
   useEffect(() => {
-    if (backgroundFile) {
-      const url = URL.createObjectURL(backgroundFile);
-      setBackgroundUrl(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setBackgroundUrl('');
-    }
-  }, [backgroundFile]);
+    // Create object to store all background URLs
+    const newBackgroundUrls: {[key: string]: string} = {};
+    
+    // Process each background file
+    Object.entries(backgroundFiles).forEach(([type, file]) => {
+      if (file) {
+        const url = URL.createObjectURL(file);
+        newBackgroundUrls[type] = url;
+      }
+    });
+    
+    setBackgroundUrls(newBackgroundUrls);
+    
+    // Cleanup function for background URLs
+    return () => {
+      Object.values(backgroundUrls).forEach(url => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    };
+  }, [backgroundFiles]);
 
   const handleFilesChange = async (
     newAudioFiles: AudioFiles,
     newLyrics: LyricEntry[] | null,
     newAlbumArtFile: File | null,
-    newBackgroundFile: File | null,
+    newBackgroundFiles: {[key: string]: File | null},
     newMetadata: VideoMetadata
   ) => {
     setAudioFiles(newAudioFiles);
     setLyrics(newLyrics);
     setAlbumArtFile(newAlbumArtFile);
-    setBackgroundFile(newBackgroundFile);
+    setBackgroundFiles(newBackgroundFiles);
     setMetadata(newMetadata);
 
     if (newAudioFiles.main) {
@@ -174,9 +192,9 @@ const App: React.FC = () => {
   }, [metadata]);
 
   useEffect(() => {
-    console.log('Background File:', backgroundFile);
-    console.log('Background URL:', backgroundUrl);
-  }, [backgroundFile, backgroundUrl]);
+    console.log('Background Files:', backgroundFiles);
+    console.log('Background URLs:', backgroundUrls);
+  }, [backgroundFiles, backgroundUrls]);
 
   return (
     <Container>
@@ -187,7 +205,7 @@ const App: React.FC = () => {
           <h2>Video Preview</h2>
           <PreviewContainer>
             <Player
-              key={`player-${metadata.videoType}-${albumArtUrl}-${backgroundUrl}-${audioUrls.main}-${audioUrls.instrumental}-${audioUrls.vocal}-${audioUrls.littleVocal}`}
+              key={`player-${metadata.videoType}-${albumArtUrl}-${backgroundUrls[metadata.videoType] || ''}-${audioUrls.main}-${audioUrls.instrumental}-${audioUrls.vocal}-${audioUrls.littleVocal}`}
               component={LyricsVideoContent}
               durationInFrames={durationInFrames}
               compositionWidth={1920}
@@ -206,7 +224,8 @@ const App: React.FC = () => {
                 lyrics: lyrics || [],
                 durationInSeconds,
                 albumArtUrl,
-                backgroundImageUrl: backgroundUrl,
+                backgroundImageUrl: backgroundUrls[metadata.videoType] || '',
+                backgroundImagesMap: backgroundUrls,
                 metadata
               }}
             />
@@ -226,7 +245,8 @@ const App: React.FC = () => {
             lyrics={lyrics}
             durationInSeconds={durationInSeconds}
             albumArtFile={albumArtFile}
-            backgroundFile={backgroundFile}
+            backgroundFile={backgroundFiles[metadata.videoType]}
+            backgroundFiles={backgroundFiles}
             metadata={metadata}
             onRenderComplete={setVideoPath}
             vocalFile={audioFiles.vocal}

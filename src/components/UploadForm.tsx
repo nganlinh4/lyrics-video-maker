@@ -167,7 +167,7 @@ interface UploadFormProps {
     audioFiles: AudioFiles,
     lyrics: LyricEntry[] | null, 
     albumArt: File | null, 
-    background: File | null,
+    background: { [key in VideoMetadata['videoType']]?: File | null },
     metadata: VideoMetadata
   ) => void;
   onVideoPathChange: (path: string) => void;
@@ -180,7 +180,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
   const [littleVocalFile, setLittleVocalFile] = useState<File | null>(null);
   const [lyricsFile, setLyricsFile] = useState<File | null>(null);
   const [albumArtFile, setAlbumArtFile] = useState<File | null>(null);
-  const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
+  const [backgroundFiles, setBackgroundFiles] = useState<{ [key in VideoMetadata['videoType']]?: File | null }>({});
   const [lyrics, setLyrics] = useState<LyricEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<{[key: string]: boolean}>({});
@@ -196,6 +196,10 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
   const instrumentalInputRef = useRef<HTMLInputElement>(null);
   const vocalInputRef = useRef<HTMLInputElement>(null);
   const littleVocalInputRef = useRef<HTMLInputElement>(null);
+  const backgroundLyricsInputRef = useRef<HTMLInputElement>(null);
+  const backgroundVocalInputRef = useRef<HTMLInputElement>(null);
+  const backgroundInstrumentalInputRef = useRef<HTMLInputElement>(null);
+  const backgroundLittleVocalInputRef = useRef<HTMLInputElement>(null);
 
   const updateFiles = () => {
     const audioFiles: AudioFiles = {
@@ -211,7 +215,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       videoType
     };
 
-    onFilesChange(audioFiles, lyrics, albumArtFile, backgroundFile, metadata);
+    onFilesChange(audioFiles, lyrics, albumArtFile, backgroundFiles, metadata);
   };
 
   const debouncedUpdateFiles = React.useCallback(
@@ -220,11 +224,11 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         { main: mainAudioFile, instrumental: instrumentalFile, vocal: vocalFile, littleVocal: littleVocalFile },
         lyrics,
         albumArtFile,
-        backgroundFile,
+        backgroundFiles,
         newMetadata
       );
     }, 500), // Wait 500ms after typing stops before updating
-    [mainAudioFile, instrumentalFile, vocalFile, littleVocalFile, lyrics, albumArtFile, backgroundFile]
+    [mainAudioFile, instrumentalFile, vocalFile, littleVocalFile, lyrics, albumArtFile, backgroundFiles]
   );
 
   const handleMetadataChange = (
@@ -244,7 +248,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         { main: mainAudioFile, instrumental: instrumentalFile, vocal: vocalFile, littleVocal: littleVocalFile },
         lyrics,
         albumArtFile,
-        backgroundFile,
+        backgroundFiles,
         { artist, songTitle, videoType: value as VideoMetadata['videoType'] }
       );
       return;
@@ -333,20 +337,30 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'albumArt' | 'background') => {
+  const handleImageChange = (
+    e: React.ChangeEvent<HTMLInputElement>, 
+    type: 'albumArt' | 'background', 
+    videoType?: VideoMetadata['videoType']
+  ) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (!file.type.startsWith('image/')) {
         setError('Please upload a valid image file (PNG, JPG, etc.)');
         return;
       }
+      
       if (type === 'albumArt') {
         setAlbumArtFile(file);
-        updateFiles();
       } else {
-        setBackgroundFile(file);
-        updateFiles();
+        if (videoType) {
+          // Set specific background file for the video type
+          setBackgroundFiles(prev => ({ ...prev, [videoType]: file }));
+        } else {
+          // For backward compatibility, set as the generic background file
+          setBackgroundFiles(prev => ({ ...prev, 'Lyrics Video': file }));
+        }
       }
+      updateFiles();
       setError(null);
     }
   };
@@ -368,7 +382,11 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     e.stopPropagation();
   };
 
-  const handleDrop = async (e: React.DragEvent, type: 'main' | 'lyrics' | 'albumArt' | 'background' | 'instrumental' | 'vocal' | 'littleVocal') => {
+  const handleDrop = async (
+    e: React.DragEvent, 
+    type: 'main' | 'lyrics' | 'albumArt' | 'background' | 'instrumental' | 'vocal' | 'littleVocal',
+    videoType?: VideoMetadata['videoType']
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(prev => ({ ...prev, [type]: false }));
@@ -441,11 +459,14 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
           }
           if (type === 'albumArt') {
             setAlbumArtFile(file);
-            updateFiles();
+          } else if (videoType) {
+            // Set specific background file for the video type
+            setBackgroundFiles(prev => ({ ...prev, [videoType]: file }));
           } else {
-            setBackgroundFile(file);
-            updateFiles();
+            // Default to Lyrics Video if no video type specified
+            setBackgroundFiles(prev => ({ ...prev, 'Lyrics Video': file }));
           }
+          updateFiles();
           break;
       }
       setError(null);
@@ -470,7 +491,9 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     let detectedLittleVocal: File | null = null;
     let detectedLyrics: File | null = null;
     let detectedAlbumArt: File | null = null;
-    let detectedBackground: File | null = null;
+    const detectedBackgrounds: { [key: string]: File } = {};
+    let backgroundImages: File[] = [];
+    let backgroundIndex = 0;
 
     // Process each file
     for (const file of files) {
@@ -527,7 +550,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
             if (isSquare) {
               detectedAlbumArt = file;
             } else {
-              detectedBackground = file;
+              // Add to background images array to be processed later
+              backgroundImages.push(file);
             }
             resolve();
           };
@@ -536,6 +560,17 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       }
     }
 
+    // Distribute background images to different video types
+    const videoTypes: VideoMetadata['videoType'][] = [
+      'Lyrics Video', 'Vocal Only', 'Instrumental Only', 'Little Vocal'
+    ];
+    
+    backgroundImages.forEach((file, index) => {
+      if (index < videoTypes.length) {
+        detectedBackgrounds[videoTypes[index]] = file;
+      }
+    });
+
     // Update state with detected files
     if (detectedMain) setMainAudioFile(detectedMain);
     if (detectedInstrumental) setInstrumentalFile(detectedInstrumental);
@@ -543,14 +578,15 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     if (detectedLittleVocal) setLittleVocalFile(detectedLittleVocal);
     if (detectedLyrics) setLyricsFile(detectedLyrics);
     if (detectedAlbumArt) setAlbumArtFile(detectedAlbumArt);
-    if (detectedBackground) setBackgroundFile(detectedBackground);
+    setBackgroundFiles(detectedBackgrounds);
 
     // Log detected files for debugging
     console.log('Detected files:', {
       main: detectedMain?.name,
       instrumental: detectedInstrumental?.name,
       vocal: detectedVocal?.name,
-      littleVocal: detectedLittleVocal?.name
+      littleVocal: detectedLittleVocal?.name,
+      backgrounds: Object.entries(detectedBackgrounds).map(([type, file]) => `${type}: ${file.name}`)
     });
 
     // Update the form
@@ -568,7 +604,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         videoType
       };
 
-      onFilesChange(audioFiles, lyrics, detectedAlbumArt, detectedBackground, metadata);
+      onFilesChange(audioFiles, lyrics, detectedAlbumArt, detectedBackgrounds, metadata);
     }, 0);
   };
 
@@ -579,7 +615,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     setLittleVocalFile(null);
     setLyricsFile(null);
     setAlbumArtFile(null);
-    setBackgroundFile(null);
+    setBackgroundFiles({});
     setLyrics(null);
     setError(null);
     setVideoPath(null);
@@ -590,7 +626,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       { main: null, instrumental: null, vocal: null, littleVocal: null },
       null,
       null,
-      null,
+      {},
       { artist: '', songTitle: '', videoType: 'Lyrics Video' }
     );
     
@@ -601,6 +637,10 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     if (instrumentalInputRef.current) instrumentalInputRef.current.value = '';
     if (vocalInputRef.current) vocalInputRef.current.value = '';
     if (littleVocalInputRef.current) littleVocalInputRef.current.value = '';
+    if (backgroundLyricsInputRef.current) backgroundLyricsInputRef.current.value = '';
+    if (backgroundVocalInputRef.current) backgroundVocalInputRef.current.value = '';
+    if (backgroundInstrumentalInputRef.current) backgroundInstrumentalInputRef.current.value = '';
+    if (backgroundLittleVocalInputRef.current) backgroundLittleVocalInputRef.current.value = '';
   };
 
   return (
@@ -629,7 +669,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
           <br />
           Drag and drop all your files at once for automatic categorization
         </DropText>
-        {(mainAudioFile || instrumentalFile || vocalFile || littleVocalFile || lyricsFile || albumArtFile || backgroundFile) && (
+        {(mainAudioFile || instrumentalFile || vocalFile || littleVocalFile || lyricsFile || albumArtFile || Object.keys(backgroundFiles).length > 0) && (
           <div style={{ marginTop: '1rem' }}>
             <h4>Detected Files:</h4>
             {mainAudioFile && <FileName>Main Audio: {mainAudioFile.name}<FileTypeTag>Main</FileTypeTag></FileName>}
@@ -638,7 +678,9 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
             {littleVocalFile && <FileName>Little Vocal: {littleVocalFile.name}<FileTypeTag>Little</FileTypeTag></FileName>}
             {lyricsFile && <FileName>Lyrics: {lyricsFile.name}<FileTypeTag>JSON</FileTypeTag></FileName>}
             {albumArtFile && <FileName>Album Art: {albumArtFile.name}<FileTypeTag>Square</FileTypeTag></FileName>}
-            {backgroundFile && <FileName>Background: {backgroundFile.name}<FileTypeTag>Background</FileTypeTag></FileName>}
+            {Object.entries(backgroundFiles).map(([type, file]) => (
+              <FileName key={type}>{type} Background: {file?.name}<FileTypeTag>Background</FileTypeTag></FileName>
+            ))}
           </div>
         )}
       </BulkDropZone>
@@ -838,31 +880,117 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         </DropZone>
       </div>
 
-      <div>
-        <InputLabel>Background Image (Optional)</InputLabel>
-        <DropZone
-          isDragging={isDragging['background']}
-          onDrop={(e) => handleDrop(e, 'background')}
-          onDragOver={handleDragOver}
-          onDragEnter={(e) => handleDragEnter(e, 'background')}
-          onDragLeave={(e) => handleDragLeave(e, 'background')}
-          onClick={() => backgroundInputRef.current?.click()}
-        >
-          <DropText>Drag and drop an image file here or click to browse</DropText>
-          <FileInput 
-            ref={backgroundInputRef}
-            type="file" 
-            accept="image/*" 
-            onChange={(e) => handleImageChange(e, 'background')}
-          />
-          {backgroundFile && (
-            <>
-              <PreviewImage src={URL.createObjectURL(backgroundFile)} alt="Background Preview" />
-              <FileName>Selected: {backgroundFile.name}</FileName>
-            </>
-          )}
-        </DropZone>
-      </div>
+      <Section>
+        <h3>Background Images (Optional)</h3>
+        <InfoBox>
+          <strong>Note:</strong> You can upload a different background image for each video type. 
+          Square images will be detected as album art, non-square images as backgrounds.
+        </InfoBox>
+
+        <div>
+          <InputLabel>Background for Lyrics Video</InputLabel>
+          <DropZone
+            isDragging={isDragging['backgroundLyrics']}
+            onDrop={(e) => handleDrop(e, 'background', 'Lyrics Video')}
+            onDragOver={handleDragOver}
+            onDragEnter={(e) => handleDragEnter(e, 'backgroundLyrics')}
+            onDragLeave={(e) => handleDragLeave(e, 'backgroundLyrics')}
+            onClick={() => backgroundLyricsInputRef.current?.click()}
+          >
+            <DropText>Drag and drop an image file here or click to browse</DropText>
+            <FileInput 
+              ref={backgroundLyricsInputRef}
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => handleImageChange(e, 'background', 'Lyrics Video')}
+            />
+            {backgroundFiles['Lyrics Video'] && (
+              <>
+                <PreviewImage src={URL.createObjectURL(backgroundFiles['Lyrics Video'])} alt="Lyrics Video Background" />
+                <FileName>Selected: {backgroundFiles['Lyrics Video']?.name}</FileName>
+              </>
+            )}
+          </DropZone>
+        </div>
+
+        <div>
+          <InputLabel>Background for Vocal Only</InputLabel>
+          <DropZone
+            isDragging={isDragging['backgroundVocal']}
+            onDrop={(e) => handleDrop(e, 'background', 'Vocal Only')}
+            onDragOver={handleDragOver}
+            onDragEnter={(e) => handleDragEnter(e, 'backgroundVocal')}
+            onDragLeave={(e) => handleDragLeave(e, 'backgroundVocal')}
+            onClick={() => backgroundVocalInputRef.current?.click()}
+          >
+            <DropText>Drag and drop an image file here or click to browse</DropText>
+            <FileInput 
+              ref={backgroundVocalInputRef}
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => handleImageChange(e, 'background', 'Vocal Only')}
+            />
+            {backgroundFiles['Vocal Only'] && (
+              <>
+                <PreviewImage src={URL.createObjectURL(backgroundFiles['Vocal Only'])} alt="Vocal Only Background" />
+                <FileName>Selected: {backgroundFiles['Vocal Only']?.name}</FileName>
+              </>
+            )}
+          </DropZone>
+        </div>
+
+        <div>
+          <InputLabel>Background for Instrumental Only</InputLabel>
+          <DropZone
+            isDragging={isDragging['backgroundInstrumental']}
+            onDrop={(e) => handleDrop(e, 'background', 'Instrumental Only')}
+            onDragOver={handleDragOver}
+            onDragEnter={(e) => handleDragEnter(e, 'backgroundInstrumental')}
+            onDragLeave={(e) => handleDragLeave(e, 'backgroundInstrumental')}
+            onClick={() => backgroundInstrumentalInputRef.current?.click()}
+          >
+            <DropText>Drag and drop an image file here or click to browse</DropText>
+            <FileInput 
+              ref={backgroundInstrumentalInputRef}
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => handleImageChange(e, 'background', 'Instrumental Only')}
+            />
+            {backgroundFiles['Instrumental Only'] && (
+              <>
+                <PreviewImage src={URL.createObjectURL(backgroundFiles['Instrumental Only'])} alt="Instrumental Only Background" />
+                <FileName>Selected: {backgroundFiles['Instrumental Only']?.name}</FileName>
+              </>
+            )}
+          </DropZone>
+        </div>
+
+        <div>
+          <InputLabel>Background for Little Vocal</InputLabel>
+          <DropZone
+            isDragging={isDragging['backgroundLittleVocal']}
+            onDrop={(e) => handleDrop(e, 'background', 'Little Vocal')}
+            onDragOver={handleDragOver}
+            onDragEnter={(e) => handleDragEnter(e, 'backgroundLittleVocal')}
+            onDragLeave={(e) => handleDragLeave(e, 'backgroundLittleVocal')}
+            onClick={() => backgroundLittleVocalInputRef.current?.click()}
+          >
+            <DropText>Drag and drop an image file here or click to browse</DropText>
+            <FileInput 
+              ref={backgroundLittleVocalInputRef}
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => handleImageChange(e, 'background', 'Little Vocal')}
+            />
+            {backgroundFiles['Little Vocal'] && (
+              <>
+                <PreviewImage src={URL.createObjectURL(backgroundFiles['Little Vocal'])} alt="Little Vocal Background" />
+                <FileName>Selected: {backgroundFiles['Little Vocal']?.name}</FileName>
+              </>
+            )}
+          </DropZone>
+        </div>
+      </Section>
 
       <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
         <Button 
