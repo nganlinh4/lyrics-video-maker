@@ -103,7 +103,8 @@ const App: React.FC = () => {
     artist: '',
     songTitle: '',
     videoType: 'Lyrics Video',
-    lyricsLineThreshold: 42 // Default threshold value
+    lyricsLineThreshold: 42, // Default threshold value
+    metadataPosition: -155 // Default metadata position
   });
   const [albumArtUrl, setAlbumArtUrl] = useState('');
 
@@ -220,6 +221,14 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleMetadataPositionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPosition = parseInt(e.target.value, 10);
+    setMetadata(prevMetadata => ({
+      ...prevMetadata,
+      metadataPosition: newPosition
+    }));
+  };
+
   // Calculate whether to show preview and render controls
   const canShowPreview = audioFiles?.main && lyrics && durationInSeconds > 0;
   const durationInFrames = Math.round(Math.max(60, durationInSeconds * 60));
@@ -273,6 +282,20 @@ const App: React.FC = () => {
             />
           </PreviewContainer>
           <ControlPanel>
+            <SliderControl>
+              <SliderLabel>
+                Metadata Position
+                <SliderValue>{metadata.metadataPosition}px</SliderValue>
+              </SliderLabel>
+              <input
+                type="range"
+                min="-200"
+                max="-155"
+                value={metadata.metadataPosition || -155}
+                onChange={handleMetadataPositionChange}
+              />
+              <small>Adjust the vertical position of the artist name and song title.</small>
+            </SliderControl>
             <SliderControl>
               <SliderLabel>
                 Lyrics Line Threshold

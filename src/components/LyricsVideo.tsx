@@ -519,7 +519,8 @@ export const LyricsVideoContent: React.FC<Props> = ({
   return (
     <ThemeProvider theme={{ 
       accentColor,
-      titleGradientPosition // Pass gradient position to theme
+      titleGradientPosition, // Pass gradient position to theme
+      metadataPosition: metadata.metadataPosition // Pass metadata position to theme
     }}>
       {/* Add style tag directly in the component */}
       <style dangerouslySetInnerHTML={{ __html: fontStyles }} />
@@ -757,7 +758,7 @@ const MetadataContainer = styled.div`
 
 const CenteredMetadataContainer = styled.div`
   position: absolute;
-  top: calc(50% - ${ALBUM_COVER_SIZE / 2}px - 155px); /* Position 80px above album art */
+  top: calc(50% - ${ALBUM_COVER_SIZE / 2}px + ${props => props.theme.metadataPosition || -155}px);
   left: ${ALBUM_COVER_MARGIN}px;
   width: ${ALBUM_COVER_SIZE}px;
   text-align: center;
