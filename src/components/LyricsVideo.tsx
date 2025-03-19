@@ -41,11 +41,11 @@ const fontStyles = `
 
 // Spotify-inspired constants (scaled up by 1.5 for 1080p)
 const LYRIC_HEIGHT = 98; // Increased from 65
-const LYRIC_MARGIN = 36; // Increased from 24
+const LYRIC_MARGIN = 48; // Increased from 24
 const TRANSITION_DURATION = 0.5;
 const BASE_POSITION = 1080 / 2 - 45; // Adjusted for new height
 const ALBUM_COVER_SIZE = 450; // Increased from 300
-const ALBUM_COVER_MARGIN = 165; // Increased from 110
+const ALBUM_COVER_MARGIN = 100; // Increased from 110
 
 // Styling constants (scaled up for 1080p)
 const INACTIVE_FONT_SIZE = 54; // Increased from 36
@@ -561,11 +561,11 @@ export const LyricsVideoContent: React.FC<Props> = ({
           <div
             style={{
               width: '85%',
-              maxWidth: '1350px', // Increased from 900
+              maxWidth: '1450px', // Increased from 900
               textAlign: 'center',
               height: '100%',
               position: 'relative',
-              marginLeft: 590, // Increased from 400
+              marginLeft: 510, // Increased from 400
             }}
           >
             {lyrics?.map((lyric: LyricEntry, index: number) => {
