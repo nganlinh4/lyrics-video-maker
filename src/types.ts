@@ -8,6 +8,7 @@ export interface VideoMetadata {
   artist: string;
   songTitle: string;
   videoType: 'Lyrics Video' | 'Vocal Only' | 'Instrumental Only' | 'Little Vocal';
+  lyricsLineThreshold?: number; // Character threshold for splitting lyrics into multiple lines
 }
 
 export interface AudioFiles {

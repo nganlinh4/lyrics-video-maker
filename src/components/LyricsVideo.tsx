@@ -123,6 +123,56 @@ export interface Props {
   littleVocalUrl?: string;
 }
 
+// Utility function to split text into roughly equal parts
+const splitTextIntoLines = (text: string, preferredBreakPoint: number): string[] => {
+  // If text is shorter than the threshold, return it as is
+  if (text.length <= preferredBreakPoint) {
+    return [text];
+  }
+
+  // Aim for the exact middle
+  const middleIndex = Math.floor(text.length / 2);
+  
+  // Search for spaces within a reasonable range around the middle
+  const searchRadius = Math.min(10, Math.floor(text.length / 4));
+  
+  // Find the closest space to the middle (checking both before and after)
+  let bestBreakIndex = middleIndex;
+  let minDistanceFromMiddle = text.length;
+  
+  // Check spaces before the middle
+  for (let i = Math.max(0, middleIndex - searchRadius); i < middleIndex; i++) {
+    if (text[i] === ' ') {
+      const distance = middleIndex - i;
+      if (distance < minDistanceFromMiddle) {
+        minDistanceFromMiddle = distance;
+        bestBreakIndex = i;
+      }
+    }
+  }
+  
+  // Check spaces after the middle
+  for (let i = middleIndex; i <= Math.min(text.length - 1, middleIndex + searchRadius); i++) {
+    if (text[i] === ' ') {
+      const distance = i - middleIndex;
+      if (distance < minDistanceFromMiddle) {
+        minDistanceFromMiddle = distance;
+        bestBreakIndex = i;
+      }
+    }
+  }
+  
+  // If no suitable space was found, just split at the middle
+  if (bestBreakIndex === middleIndex && text[middleIndex] !== ' ') {
+    bestBreakIndex = middleIndex;
+  }
+  
+  const firstLine = text.substring(0, bestBreakIndex).trim();
+  const secondLine = text.substring(bestBreakIndex).trim();
+  
+  return [firstLine, secondLine];
+};
+
 interface AudioConfig {
   src: string;
   volume: number;
@@ -144,9 +194,27 @@ export const LyricsVideoContent: React.FC<Props> = ({
   const { fps } = useVideoConfig();
   const currentTimeInSeconds = frame / fps;
 
-  // Remove the useState and useEffect for font loading entirely
-  // Rest of the component code stays the same...
-  
+  // Process lyrics based on line threshold
+  const processedLyrics = useMemo(() => {
+    if (!lyrics || !metadata.lyricsLineThreshold) {
+      return lyrics;
+    }
+    
+    return lyrics.map(lyric => {
+      // Only process lyrics that exceed the threshold
+      if (lyric.text.length <= metadata.lyricsLineThreshold!) {
+        return lyric;
+      }
+      
+      // Split long lyrics into multiple lines
+      const lines = splitTextIntoLines(lyric.text, metadata.lyricsLineThreshold!);
+      return {
+        ...lyric,
+        text: lines.join('\n') // Use newline character to create multiple lines
+      };
+    });
+  }, [lyrics, metadata.lyricsLineThreshold]);
+
   const getAudioConfig = useCallback(() => {
     // Return appropriate audio configuration based on video type
     switch (metadata.videoType) {
@@ -241,20 +309,20 @@ export const LyricsVideoContent: React.FC<Props> = ({
     return backgroundImageUrl || '';
   }, [backgroundImagesMap, metadata.videoType, backgroundImageUrl]);
 
-  // Find the active lyric index
+  // Find the active lyric index - update to use processedLyrics
   const activeLyricIndex = useMemo(() => {
-    return lyrics?.findIndex(
+    return processedLyrics?.findIndex(
       (lyric) => currentTimeInSeconds >= lyric.start && currentTimeInSeconds <= lyric.end
     ) ?? -1;
-  }, [lyrics, currentTimeInSeconds]);
+  }, [processedLyrics, currentTimeInSeconds]);
 
-  // Calculate scroll offset with smooth transition
+  // Calculate scroll offset with smooth transition - update to use processedLyrics
   const scrollOffset = useMemo(() => {
     if (activeLyricIndex >= 0) {
-      const currentLyric = lyrics[activeLyricIndex];
+      const currentLyric = processedLyrics[activeLyricIndex];
       const currentOffset = activeLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-      if (activeLyricIndex < lyrics.length - 1) {
-        const nextLyric = lyrics[activeLyricIndex + 1];
+      if (activeLyricIndex < processedLyrics.length - 1) {
+        const nextLyric = processedLyrics[activeLyricIndex + 1];
         const nextOffset = (activeLyricIndex + 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
         const transitionCenter = (currentLyric.end + nextLyric.start) / 2;
         const transitionStart = transitionCenter - TRANSITION_DURATION / 2;
@@ -271,13 +339,13 @@ export const LyricsVideoContent: React.FC<Props> = ({
       }
       return currentOffset;
     } else {
-      // Find previous and next lyrics during the gap
-      const previousLyricIndex = lyrics.reduce((prev, curr, i) => 
-        curr.end <= currentTimeInSeconds && (prev === -1 || lyrics[prev].end < curr.end) ? i : prev, -1);
-      const nextLyricIndex = lyrics.findIndex(lyric => lyric.start > currentTimeInSeconds);
+      // Find previous and next lyrics during the gap - update to use processedLyrics
+      const previousLyricIndex = processedLyrics.reduce((prev, curr, i) => 
+        curr.end <= currentTimeInSeconds && (prev === -1 || processedLyrics[prev].end < curr.end) ? i : prev, -1);
+      const nextLyricIndex = processedLyrics.findIndex(lyric => lyric.start > currentTimeInSeconds);
       if (previousLyricIndex >= 0 && nextLyricIndex >= 0) {
-        const previousLyric = lyrics[previousLyricIndex];
-        const nextLyric = lyrics[nextLyricIndex];
+        const previousLyric = processedLyrics[previousLyricIndex];
+        const nextLyric = processedLyrics[nextLyricIndex];
         const previousOffset = previousLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
         const nextOffset = nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
         const transitionCenter = (previousLyric.end + nextLyric.start) / 2;
@@ -294,9 +362,9 @@ export const LyricsVideoContent: React.FC<Props> = ({
         return currentTimeInSeconds < transitionCenter ? previousOffset : nextOffset;
       }
       return nextLyricIndex >= 0 ? nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION : 
-        (lyrics.length - 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+        (processedLyrics.length - 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
     }
-  }, [activeLyricIndex, currentTimeInSeconds, lyrics]);
+  }, [activeLyricIndex, currentTimeInSeconds, processedLyrics]);
 
   // Abum cover floating animation
   const albumCoverOffset = useMemo(() => {
@@ -557,7 +625,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
             <AudioVisualizer timeInSeconds={currentTimeInSeconds} />
           </AlbumCoverContainer>
 
-          {/* Lyrics Container */}
+          {/* Lyrics Container - updated to use processedLyrics */}
           <div
             style={{
               width: '85%',
@@ -568,7 +636,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
               marginLeft: 510, // Increased from 400
             }}
           >
-            {lyrics?.map((lyric: LyricEntry, index: number) => {
+            {processedLyrics?.map((lyric: LyricEntry, index: number) => {
               const progress = getLyricProgress(lyric, currentTimeInSeconds);
               const naturalPosition = index * (LYRIC_HEIGHT + LYRIC_MARGIN);
               const position = naturalPosition - scrollOffset;
@@ -610,7 +678,7 @@ export const LyricsVideoContent: React.FC<Props> = ({
                     fontFamily: FONT_FAMILY,
                     fontWeight,
                     textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                    whiteSpace: 'pre-wrap',
+                    whiteSpace: 'pre-wrap', // This ensures newlines are respected
                     letterSpacing: '0',
                     userSelect: 'none',
                     zIndex: 100 - Math.abs(activeLyricIndex - index),

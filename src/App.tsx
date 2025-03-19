@@ -41,6 +41,38 @@ const PreviewContainer = styled.div`
   margin: 20px 0;
 `;
 
+const ControlPanel = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+`;
+
+const SliderControl = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const SliderLabel = styled.label`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+`;
+
+const SliderValue = styled.span`
+  font-weight: bold;
+  background-color: #e0e0e0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 40px;
+  text-align: center;
+`;
+
 const StatusText = styled.div<{ error?: boolean }>`
   margin: 10px 0;
   padding: 10px;
@@ -70,7 +102,8 @@ const App: React.FC = () => {
   const [metadata, setMetadata] = useState<VideoMetadata>({
     artist: '',
     songTitle: '',
-    videoType: 'Lyrics Video'
+    videoType: 'Lyrics Video',
+    lyricsLineThreshold: 42 // Default threshold value
   });
   const [albumArtUrl, setAlbumArtUrl] = useState('');
 
@@ -178,6 +211,15 @@ const App: React.FC = () => {
     }
   };
 
+  // Handle lyrics threshold change
+  const handleLyricsThresholdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newThreshold = parseInt(e.target.value, 10);
+    setMetadata(prevMetadata => ({
+      ...prevMetadata,
+      lyricsLineThreshold: newThreshold
+    }));
+  };
+
   // Calculate whether to show preview and render controls
   const canShowPreview = audioFiles?.main && lyrics && durationInSeconds > 0;
   const durationInFrames = Math.round(Math.max(60, durationInSeconds * 60));
@@ -230,6 +272,22 @@ const App: React.FC = () => {
               }}
             />
           </PreviewContainer>
+          <ControlPanel>
+            <SliderControl>
+              <SliderLabel>
+                Lyrics Line Threshold
+                <SliderValue>{metadata.lyricsLineThreshold}</SliderValue>
+              </SliderLabel>
+              <input
+                type="range"
+                min="20"
+                max="100"
+                value={metadata.lyricsLineThreshold || 40}
+                onChange={handleLyricsThresholdChange}
+              />
+              <small>Lyrics with more characters than this threshold will be automatically split into multiple lines to prevent words from jumping during animations.</small>
+            </SliderControl>
+          </ControlPanel>
         </Card>
       )}
       
