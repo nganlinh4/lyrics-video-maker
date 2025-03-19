@@ -141,7 +141,6 @@ app.post('/render', async (req, res) => {
                 ignoreCertificateErrors: true,
                 gl: "vulkan"
             },
-            concurrency: 20,
             logLevel: 'verbose',
             onProgress: ({ renderedFrames, encodedFrames }) => {
                 console.log(`Progress: ${renderedFrames}/${durationInFrames} frames`);

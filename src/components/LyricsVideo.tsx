@@ -438,8 +438,21 @@ export const LyricsVideoContent: React.FC<Props> = ({
     );
   };
 
+  // Calculate gradient position for title
+  const titleGradientPosition = useMemo(() => {
+    // Complete cycle in 12 seconds (same as original animation duration)
+    const cycleDuration = 12 * fps;
+    // Use sine function for smooth back-and-forth movement
+    const position = Math.sin((frame % cycleDuration) / cycleDuration * Math.PI * 2) * 200;
+    // Map from -200 to 200 range
+    return position;
+  }, [frame, fps]);
+
   return (
-    <ThemeProvider theme={{ accentColor }}>
+    <ThemeProvider theme={{ 
+      accentColor,
+      titleGradientPosition // Pass gradient position to theme
+    }}>
       {/* Add style tag directly in the component */}
       <style dangerouslySetInnerHTML={{ __html: fontStyles }} />
       <AbsoluteFill
@@ -482,7 +495,13 @@ export const LyricsVideoContent: React.FC<Props> = ({
           {/* Centered Metadata above album art */}
           <CenteredMetadataContainer>
             <ArtistName>{metadata.artist}</ArtistName>
-            <SongTitle>{metadata.songTitle}</SongTitle>
+            <SongTitle 
+              style={{ 
+                backgroundPosition: `${titleGradientPosition}% center` 
+              }}
+            >
+              {metadata.songTitle}
+            </SongTitle>
           </CenteredMetadataContainer>
 
           {/* Album Cover with Video Type below it */}
@@ -721,12 +740,6 @@ const SongTitle = styled.h1`
   background-clip: text;
   color: transparent;
   text-shadow: none;
-  animation: shine 12s ease-in-out infinite;
   background-size: 200% auto;
-  
-  @keyframes shine {
-    0% { background-position: -200% center; }
-    50% { background-position: 200% center; }
-    100% { background-position: -200% center; }
-  }
+  /* Remove animation property as we're controlling position directly via inline style */
 `;
