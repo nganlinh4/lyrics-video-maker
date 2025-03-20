@@ -19,7 +19,9 @@ interface Props {
 const DEFAULT_METADATA: VideoMetadata = {
   artist: 'Unknown Artist',
   songTitle: 'Unknown Song',
-  videoType: 'Lyrics Video'
+  videoType: 'Lyrics Video',
+  lyricsLineThreshold: 42,
+  metadataPosition: -155
 };
 
 export { LyricsVideoContent };

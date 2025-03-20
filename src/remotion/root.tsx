@@ -13,7 +13,9 @@ const sampleLyrics: LyricEntry[] = [
 const defaultMetadata: VideoMetadata = {
   artist: 'Preview Artist',
   songTitle: 'Preview Song',
-  videoType: 'Lyrics Video'
+  videoType: 'Lyrics Video',
+  lyricsLineThreshold: 42,
+  metadataPosition: -155
 };
 
 // Create a type-safe wrapper component

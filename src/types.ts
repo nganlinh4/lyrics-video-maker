@@ -8,8 +8,8 @@ export interface VideoMetadata {
   artist: string;
   songTitle: string;
   videoType: 'Lyrics Video' | 'Vocal Only' | 'Instrumental Only' | 'Little Vocal';
-  lyricsLineThreshold?: number; // Character threshold for splitting lyrics into multiple lines
-  metadataPosition?: number; // Position offset for metadata container
+  lyricsLineThreshold: number; // No longer optional
+  metadataPosition: number; // No longer optional
 }
 
 export interface AudioFiles {

@@ -196,18 +196,18 @@ export const LyricsVideoContent: React.FC<Props> = ({
 
   // Process lyrics based on line threshold
   const processedLyrics = useMemo(() => {
-    if (!lyrics || !metadata.lyricsLineThreshold) {
+    if (!lyrics) {
       return lyrics;
     }
     
     return lyrics.map(lyric => {
       // Only process lyrics that exceed the threshold
-      if (lyric.text.length <= metadata.lyricsLineThreshold!) {
+      if (lyric.text.length <= metadata.lyricsLineThreshold) {
         return lyric;
       }
       
       // Split long lyrics into multiple lines
-      const lines = splitTextIntoLines(lyric.text, metadata.lyricsLineThreshold!);
+      const lines = splitTextIntoLines(lyric.text, metadata.lyricsLineThreshold);
       return {
         ...lyric,
         text: lines.join('\n') // Use newline character to create multiple lines
