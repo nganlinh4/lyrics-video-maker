@@ -173,6 +173,17 @@ const splitTextIntoLines = (text: string, preferredBreakPoint: number): string[]
   return [firstLine, secondLine];
 };
 
+// Utility function to determine if a lyric has multiple lines, regardless of how it got them
+const countLyricLines = (text: string): number => {
+  if (!text) return 1;
+  
+  // Count both explicit newlines in the original text and those added by our lyric processing
+  return (text.match(/\n/g) || []).length + 1;
+};
+
+// Additional margin to add per extra line of lyrics (increased for better visibility)
+const EXTRA_LINE_MARGIN = 40;
+
 interface AudioConfig {
   src: string;
   volume: number;
@@ -316,17 +327,36 @@ export const LyricsVideoContent: React.FC<Props> = ({
     ) ?? -1;
   }, [processedLyrics, currentTimeInSeconds]);
 
-  // Calculate scroll offset with smooth transition - update to use processedLyrics
+  // Calculate scroll offset with smooth transition - update to use processedLyrics and account for multi-line lyrics
   const scrollOffset = useMemo(() => {
     if (activeLyricIndex >= 0) {
       const currentLyric = processedLyrics[activeLyricIndex];
-      const currentOffset = activeLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+      
+      // Calculate extra margins for all lyrics up to the active one
+      const extraMarginSum = processedLyrics.slice(0, activeLyricIndex).reduce((sum, lyric) => {
+        const lineCount = countLyricLines(lyric.text);
+        return sum + (lineCount - 1) * EXTRA_LINE_MARGIN;
+      }, 0);
+      
+      // Calculate current offset including extra margins
+      const currentOffset = activeLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) + extraMarginSum - BASE_POSITION;
+      
       if (activeLyricIndex < processedLyrics.length - 1) {
         const nextLyric = processedLyrics[activeLyricIndex + 1];
-        const nextOffset = (activeLyricIndex + 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+        
+        // Calculate extra margins for the next lyric
+        const nextExtraMarginSum = processedLyrics.slice(0, activeLyricIndex + 1).reduce((sum, lyric) => {
+          const lineCount = countLyricLines(lyric.text);
+          return sum + (lineCount - 1) * EXTRA_LINE_MARGIN;
+        }, 0);
+        
+        // Calculate next offset including extra margins
+        const nextOffset = (activeLyricIndex + 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) + nextExtraMarginSum - BASE_POSITION;
+        
         const transitionCenter = (currentLyric.end + nextLyric.start) / 2;
         const transitionStart = transitionCenter - TRANSITION_DURATION / 2;
         const transitionEnd = transitionCenter + TRANSITION_DURATION / 2;
+        
         if (currentTimeInSeconds >= transitionStart && currentTimeInSeconds <= transitionEnd) {
           const p = (currentTimeInSeconds - transitionStart) / TRANSITION_DURATION;
           const easedP = Easing.bezier(0.25, 0.1, 0.25, 1)(p);
@@ -342,15 +372,32 @@ export const LyricsVideoContent: React.FC<Props> = ({
       // Find previous and next lyrics during the gap - update to use processedLyrics
       const previousLyricIndex = processedLyrics.reduce((prev, curr, i) => 
         curr.end <= currentTimeInSeconds && (prev === -1 || processedLyrics[prev].end < curr.end) ? i : prev, -1);
+      
       const nextLyricIndex = processedLyrics.findIndex(lyric => lyric.start > currentTimeInSeconds);
+      
       if (previousLyricIndex >= 0 && nextLyricIndex >= 0) {
         const previousLyric = processedLyrics[previousLyricIndex];
         const nextLyric = processedLyrics[nextLyricIndex];
-        const previousOffset = previousLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
-        const nextOffset = nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+        
+        // Calculate extra margins for previous lyric
+        const prevExtraMarginSum = processedLyrics.slice(0, previousLyricIndex).reduce((sum, lyric) => {
+          const lineCount = countLyricLines(lyric.text);
+          return sum + (lineCount - 1) * EXTRA_LINE_MARGIN;
+        }, 0);
+        
+        // Calculate extra margins for next lyric
+        const nextExtraMarginSum = processedLyrics.slice(0, nextLyricIndex).reduce((sum, lyric) => {
+          const lineCount = countLyricLines(lyric.text);
+          return sum + (lineCount - 1) * EXTRA_LINE_MARGIN;
+        }, 0);
+        
+        const previousOffset = previousLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) + prevExtraMarginSum - BASE_POSITION;
+        const nextOffset = nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) + nextExtraMarginSum - BASE_POSITION;
+        
         const transitionCenter = (previousLyric.end + nextLyric.start) / 2;
         const transitionStart = transitionCenter - TRANSITION_DURATION / 2;
         const transitionEnd = transitionCenter + TRANSITION_DURATION / 2;
+        
         if (currentTimeInSeconds >= transitionStart && currentTimeInSeconds <= transitionEnd) {
           const p = (currentTimeInSeconds - transitionStart) / TRANSITION_DURATION;
           const easedP = Easing.bezier(0.25, 0.1, 0.25, 1)(p);
@@ -361,8 +408,26 @@ export const LyricsVideoContent: React.FC<Props> = ({
         }
         return currentTimeInSeconds < transitionCenter ? previousOffset : nextOffset;
       }
-      return nextLyricIndex >= 0 ? nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION : 
-        (processedLyrics.length - 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) - BASE_POSITION;
+      
+      if (nextLyricIndex >= 0) {
+        // Calculate extra margins for next lyric
+        const nextExtraMarginSum = processedLyrics.slice(0, nextLyricIndex).reduce((sum, lyric) => {
+          const lineCount = countLyricLines(lyric.text);
+          return sum + (lineCount - 1) * EXTRA_LINE_MARGIN;
+        }, 0);
+        
+        return nextLyricIndex * (LYRIC_HEIGHT + LYRIC_MARGIN) + nextExtraMarginSum - BASE_POSITION;
+      } else if (processedLyrics.length > 0) {
+        // Calculate extra margins for last lyric
+        const lastExtraMarginSum = processedLyrics.slice(0, processedLyrics.length - 1).reduce((sum, lyric) => {
+          const lineCount = countLyricLines(lyric.text);
+          return sum + (lineCount - 1) * EXTRA_LINE_MARGIN;
+        }, 0);
+        
+        return (processedLyrics.length - 1) * (LYRIC_HEIGHT + LYRIC_MARGIN) + lastExtraMarginSum - BASE_POSITION;
+      }
+      
+      return 0;
     }
   }, [activeLyricIndex, currentTimeInSeconds, processedLyrics]);
 
@@ -640,7 +705,20 @@ export const LyricsVideoContent: React.FC<Props> = ({
           >
             {processedLyrics?.map((lyric: LyricEntry, index: number) => {
               const progress = getLyricProgress(lyric, currentTimeInSeconds);
-              const naturalPosition = index * (LYRIC_HEIGHT + LYRIC_MARGIN);
+              
+              // Count the number of lines in this lyric
+              const lineCount = countLyricLines(lyric.text);
+              // Add extra margin for each additional line beyond the first
+              const extraMargin = (lineCount - 1) * EXTRA_LINE_MARGIN;
+              
+              // Calculate positions with the extra margin for multi-line lyrics
+              const naturalPosition = index * (LYRIC_HEIGHT + LYRIC_MARGIN) + 
+                // Sum up extra margins for all previous lyrics
+                processedLyrics.slice(0, index).reduce((sum, prevLyric) => {
+                  const prevLineCount = countLyricLines(prevLyric.text);
+                  return sum + (prevLineCount - 1) * EXTRA_LINE_MARGIN;
+                }, 0);
+              
               const position = naturalPosition - scrollOffset;
               const distance = Math.abs(position - BASE_POSITION);
               
