@@ -10,6 +10,7 @@ export interface VideoMetadata {
   videoType: 'Lyrics Video' | 'Vocal Only' | 'Instrumental Only' | 'Little Vocal';
   lyricsLineThreshold: number; // No longer optional
   metadataPosition: number; // No longer optional
+  metadataWidth: number; // Width of the metadata container
 }
 
 export interface AudioFiles {

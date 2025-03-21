@@ -162,6 +162,7 @@ interface VideoMetadata {
   videoType: 'Lyrics Video' | 'Vocal Only' | 'Instrumental Only' | 'Little Vocal';
   lyricsLineThreshold: number;
   metadataPosition: number;
+  metadataWidth: number;
 }
 
 interface UploadFormProps {
@@ -216,7 +217,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       songTitle,
       videoType,
       lyricsLineThreshold: 42,
-      metadataPosition: -155
+      metadataPosition: -155,
+      metadataWidth: 800
     };
 
     onFilesChange(audioFiles, lyrics, albumArtFile, backgroundFiles, metadata);
@@ -227,7 +229,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       const completeMetadata = {
         ...newMetadata,
         lyricsLineThreshold: 42,
-        metadataPosition: -155
+        metadataPosition: -155,
+        metadataWidth: 800
       };
       onFilesChange(
         { main: mainAudioFile, instrumental: instrumentalFile, vocal: vocalFile, littleVocal: littleVocalFile },
@@ -258,7 +261,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         lyrics,
         albumArtFile,
         backgroundFiles,
-        { artist, songTitle, videoType: value as VideoMetadata['videoType'], lyricsLineThreshold: 42, metadataPosition: -155 }
+        { artist, songTitle, videoType: value as VideoMetadata['videoType'], lyricsLineThreshold: 42, metadataPosition: -155, metadataWidth: 800 }
       );
       return;
     }
@@ -269,7 +272,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       songTitle: name === 'songTitle' ? value : songTitle,
       videoType,
       lyricsLineThreshold: 42,
-      metadataPosition: -155
+      metadataPosition: -155,
+      metadataWidth: 800
     };
     
     debouncedUpdateFiles(newMetadata);
@@ -614,7 +618,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         songTitle,
         videoType,
         lyricsLineThreshold: 42,
-        metadataPosition: -155
+        metadataPosition: -155,
+        metadataWidth: 800
       };
 
       onFilesChange(audioFiles, lyrics, detectedAlbumArt, detectedBackgrounds, metadata);
@@ -640,7 +645,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       null,
       null,
       {},
-      { artist: '', songTitle: '', videoType: 'Lyrics Video', lyricsLineThreshold: 42, metadataPosition: -155 }
+      { artist: '', songTitle: '', videoType: 'Lyrics Video', lyricsLineThreshold: 42, metadataPosition: -155, metadataWidth: 800 }
     );
     
     if (mainAudioInputRef.current) mainAudioInputRef.current.value = '';

@@ -21,7 +21,8 @@ const DEFAULT_METADATA: VideoMetadata = {
   songTitle: 'Unknown Song',
   videoType: 'Lyrics Video',
   lyricsLineThreshold: 42,
-  metadataPosition: -155
+  metadataPosition: -155,
+  metadataWidth: 450
 };
 
 export { LyricsVideoContent };

@@ -104,7 +104,8 @@ const App: React.FC = () => {
     songTitle: '',
     videoType: 'Lyrics Video',
     lyricsLineThreshold: 42, // Default threshold value
-    metadataPosition: -155 // Default metadata position
+    metadataPosition: -155, // Default metadata position
+    metadataWidth: 450 // Default width matching the ALBUM_COVER_SIZE
   });
   const [albumArtUrl, setAlbumArtUrl] = useState('');
 
@@ -229,6 +230,15 @@ const App: React.FC = () => {
     }));
   };
 
+  // Handle metadata width change
+  const handleMetadataWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newWidth = parseInt(e.target.value, 10);
+    setMetadata(prevMetadata => ({
+      ...prevMetadata,
+      metadataWidth: newWidth
+    }));
+  };
+
   // Calculate whether to show preview and render controls
   const canShowPreview = audioFiles?.main && lyrics && durationInSeconds > 0;
   const durationInFrames = Math.round(Math.max(60, durationInSeconds * 60));
@@ -295,6 +305,20 @@ const App: React.FC = () => {
                 onChange={handleMetadataPositionChange}
               />
               <small>Adjust the vertical position of the artist name and song title.</small>
+            </SliderControl>
+            <SliderControl>
+              <SliderLabel>
+                Metadata Width
+                <SliderValue>{metadata.metadataWidth}px</SliderValue>
+              </SliderLabel>
+              <input
+                type="range"
+                min="450"
+                max="900"
+                value={metadata.metadataWidth || 450}
+                onChange={handleMetadataWidthChange}
+              />
+              <small>Adjust the width of the metadata container while maintaining center alignment with album art.</small>
             </SliderControl>
             <SliderControl>
               <SliderLabel>

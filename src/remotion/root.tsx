@@ -15,7 +15,8 @@ const defaultMetadata: VideoMetadata = {
   songTitle: 'Preview Song',
   videoType: 'Lyrics Video',
   lyricsLineThreshold: 42,
-  metadataPosition: -155
+  metadataPosition: -155,
+  metadataWidth: 450
 };
 
 // Create a type-safe wrapper component
