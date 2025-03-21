@@ -216,7 +216,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       artist,
       songTitle,
       videoType,
-      lyricsLineThreshold: 42,
+      lyricsLineThreshold: 41,
       metadataPosition: -155,
       metadataWidth: 800
     };
@@ -228,7 +228,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     debounce((newMetadata: VideoMetadata) => {
       const completeMetadata = {
         ...newMetadata,
-        lyricsLineThreshold: 42,
+        lyricsLineThreshold: 41,
         metadataPosition: -155,
         metadataWidth: 800
       };
@@ -261,7 +261,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         lyrics,
         albumArtFile,
         backgroundFiles,
-        { artist, songTitle, videoType: value as VideoMetadata['videoType'], lyricsLineThreshold: 42, metadataPosition: -155, metadataWidth: 800 }
+        { artist, songTitle, videoType: value as VideoMetadata['videoType'], lyricsLineThreshold: 41, metadataPosition: -155, metadataWidth: 800 }
       );
       return;
     }
@@ -271,7 +271,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       artist: name === 'artist' ? value : artist,
       songTitle: name === 'songTitle' ? value : songTitle,
       videoType,
-      lyricsLineThreshold: 42,
+      lyricsLineThreshold: 41,
       metadataPosition: -155,
       metadataWidth: 800
     };
@@ -617,7 +617,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         artist,
         songTitle,
         videoType,
-        lyricsLineThreshold: 42,
+        lyricsLineThreshold: 41,
         metadataPosition: -155,
         metadataWidth: 800
       };
@@ -645,7 +645,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       null,
       null,
       {},
-      { artist: '', songTitle: '', videoType: 'Lyrics Video', lyricsLineThreshold: 42, metadataPosition: -155, metadataWidth: 800 }
+      { artist: '', songTitle: '', videoType: 'Lyrics Video', lyricsLineThreshold: 41, metadataPosition: -155, metadataWidth: 800 }
     );
     
     if (mainAudioInputRef.current) mainAudioInputRef.current.value = '';

@@ -103,7 +103,7 @@ const App: React.FC = () => {
     artist: '',
     songTitle: '',
     videoType: 'Lyrics Video',
-    lyricsLineThreshold: 42, // Default threshold value
+    lyricsLineThreshold: 41, // Default threshold value
     metadataPosition: -155, // Default metadata position
     metadataWidth: 450 // Default width matching the ALBUM_COVER_SIZE
   });

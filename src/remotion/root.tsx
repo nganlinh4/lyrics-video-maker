@@ -14,7 +14,7 @@ const defaultMetadata: VideoMetadata = {
   artist: 'Preview Artist',
   songTitle: 'Preview Song',
   videoType: 'Lyrics Video',
-  lyricsLineThreshold: 42,
+  lyricsLineThreshold: 41,
   metadataPosition: -155,
   metadataWidth: 450
 };
