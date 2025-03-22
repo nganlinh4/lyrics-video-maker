@@ -131,11 +131,11 @@ export const RenderControl: React.FC<RenderControlProps> = ({
                      durationInSeconds > 0 && 
                      !isRendering;
 
-  // Function to add current project to queue
-  const handleAddToQueue = () => {
+  // Function to add current version to queue
+  const handleAddCurrentVersionToQueue = () => {
     if (!canAddToQueue || !audioFile) return;
 
-    // Make sure to pass the full metadata object with all required properties
+    // Add only the current version (selected in metadata.videoType)
     addToQueue({
       audioFile,
       lyrics: lyrics || [],
@@ -152,7 +152,36 @@ export const RenderControl: React.FC<RenderControlProps> = ({
       },
       vocalFile,
       instrumentalFile,
-      littleVocalFile
+      littleVocalFile,
+      // Flag to indicate this is only for a single version
+      singleVersion: true
+    });
+  };
+
+  // Function to add all versions to queue
+  const handleAddAllVersionsToQueue = () => {
+    if (!canAddToQueue || !audioFile) return;
+
+    // Add all four versions to the queue
+    addToQueue({
+      audioFile,
+      lyrics: lyrics || [],
+      durationInSeconds,
+      albumArtFile,
+      backgroundFiles: backgroundFiles || {},
+      metadata: {
+        artist: metadata.artist,
+        songTitle: metadata.songTitle,
+        videoType: metadata.videoType, // This will be overridden for each version in the processing phase
+        lyricsLineThreshold: metadata.lyricsLineThreshold,
+        metadataPosition: metadata.metadataPosition,
+        metadataWidth: metadata.metadataWidth
+      },
+      vocalFile,
+      instrumentalFile,
+      littleVocalFile,
+      // Flag to indicate all versions should be rendered
+      allVersions: true
     });
   };
 
@@ -173,11 +202,14 @@ export const RenderControl: React.FC<RenderControlProps> = ({
       try {
         const results: { [videoType: string]: string } = {};
         
-        // Process all video types for this item
-        for (const videoType of videoTypes) {
+        // Process either all video types or just the selected one based on queue item flags
+        const typesToProcess = nextItem.singleVersion ? [nextItem.metadata.videoType] : videoTypes;
+        
+        for (const videoType of typesToProcess) {
           // Update for current video type
           updateQueueItem(nextItem.id, { 
-            progress: 0
+            progress: 0,
+            currentVideoType: videoType
           });
           
           // Create type-specific configuration for audio files based on the video type
@@ -605,33 +637,25 @@ export const RenderControl: React.FC<RenderControlProps> = ({
   return (
     <Container>
       <InfoText>
-        Note: This is a preview environment. Video rendering requires a server-side component. 
-        The preview above shows how your video will look, but downloading the final video 
-        is not available in this browser-only version.
+        Note: Videos are rendered through the queue system. Add either the current version or all four versions
+        to the queue, and they'll be processed in the background while you work on other songs.
       </InfoText>
       
       <ButtonContainer>
         <Button
-          onClick={handleRender}
-          disabled={isRendering || !audioFile || !lyrics}
-        >
-          {isRendering ? 'Rendering...' : 'Render Current Version'}
-        </Button>
-        
-        <Button
-          onClick={handleRenderAllVersions}
-          disabled={isRendering || !audioFile || !lyrics}
-          style={{ background: 'linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%)' }}
-        >
-          {isRendering ? `Rendering ${currentVersion || '...'}` : 'Render All Versions'}
-        </Button>
-        
-        <Button
-          onClick={handleAddToQueue}
+          onClick={handleAddCurrentVersionToQueue}
           disabled={!canAddToQueue}
-          style={{ background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)', flex: 1 }}
         >
-          Add to Queue
+          Add Version to Queue
+        </Button>
+        
+        <Button
+          onClick={handleAddAllVersionsToQueue}
+          disabled={!canAddToQueue}
+          style={{ background: 'linear-gradient(135deg, #E91E63 0%, #C2185B 100%)', flex: 1 }}
+        >
+          Add All Versions to Queue
         </Button>
       </ButtonContainer>
 

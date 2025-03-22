@@ -17,6 +17,9 @@ export interface QueueItem {
   progress: number;
   error?: string;
   result?: { [videoType: string]: string }; // videoType -> output URL
+  singleVersion?: boolean; // Flag to indicate only render the current version
+  allVersions?: boolean; // Flag to indicate render all versions
+  currentVideoType?: string; // Currently processing video type
 }
 
 interface QueueContextType {
