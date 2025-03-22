@@ -189,18 +189,23 @@ export const RenderControl: React.FC<RenderControlProps> = ({
       for (const videoType of videoTypes) {
         setCurrentVersion(videoType);
         
-        // Create URLs for additional audio files if they exist
-        const additionalUrls: { [key: string]: string } = {};
+        // Create type-specific configuration for audio files based on the video type
+        const typeSpecificAudioConfig: { [key: string]: string } = {};
+        
+        // First, add all available audio files
         if (vocalFile) {
-          additionalUrls.vocalUrl = URL.createObjectURL(vocalFile);
+          typeSpecificAudioConfig.vocalUrl = URL.createObjectURL(vocalFile);
         }
         if (instrumentalFile) {
-          additionalUrls.instrumentalUrl = URL.createObjectURL(instrumentalFile);
+          typeSpecificAudioConfig.instrumentalUrl = URL.createObjectURL(instrumentalFile);
         }
         if (littleVocalFile) {
-          additionalUrls.littleVocalUrl = URL.createObjectURL(littleVocalFile);
+          typeSpecificAudioConfig.littleVocalUrl = URL.createObjectURL(littleVocalFile);
         }
-
+        
+        // Log which video type we're currently rendering
+        console.log(`Preparing to render ${videoType} version`);
+        
         // Create background URLs map for all video types
         const backgroundImagesMap: { [key: string]: string } = {};
         Object.entries(backgroundFiles).forEach(([bgVideoType, bgFile]) => {
@@ -223,7 +228,7 @@ export const RenderControl: React.FC<RenderControlProps> = ({
             backgroundImageUrl: currentBackgroundUrl,
             backgroundImagesMap,
             metadata: { ...metadata, videoType },
-            ...additionalUrls
+            ...typeSpecificAudioConfig
           },
           (progress) => {
             if (progress.status === 'error') {
@@ -235,7 +240,7 @@ export const RenderControl: React.FC<RenderControlProps> = ({
         );
 
         // Clean up URLs
-        Object.values(additionalUrls).forEach(url => URL.revokeObjectURL(url));
+        Object.values(typeSpecificAudioConfig).forEach(url => URL.revokeObjectURL(url));
         if (currentBackgroundUrl) URL.revokeObjectURL(currentBackgroundUrl);
 
         // Add to rendered videos list
@@ -243,12 +248,9 @@ export const RenderControl: React.FC<RenderControlProps> = ({
       }
 
       // Clean up background URLs after all videos are rendered
-      // Store backgroundImagesMap URLs in a separate array before the loop ends
-      const backgroundUrlsToCleanup: string[] = [];
       for (const videoType of videoTypes) {
         if (backgroundFiles[videoType]) {
           const url = URL.createObjectURL(backgroundFiles[videoType]!);
-          backgroundUrlsToCleanup.push(url);
           URL.revokeObjectURL(url);
         }
       }

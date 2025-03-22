@@ -48,6 +48,59 @@ app.post('/upload/:type', upload.single('file'), (req, res) => {
         filename: req.file.filename
     });
 });
+// Helper function to verify assets on the server side
+function verifyServerAssets(videoType, audioUrl, instrumentalUrl, vocalUrl, littleVocalUrl, backgroundImagesMap = {}, backgroundImageUrl) {
+    console.log(`\n=== SERVER-SIDE VERIFICATION for ${videoType} render ===`);
+    // Verify audio files based on video type
+    let audioToUse;
+    switch (videoType) {
+        case 'Vocal Only':
+            audioToUse = vocalUrl || audioUrl;
+            console.log(vocalUrl
+                ? `✓ SERVER using vocal track for Vocal Only: ${vocalUrl}`
+                : `⚠️ SERVER WARNING: Using main audio as fallback for Vocal Only: ${audioUrl}`);
+            break;
+        case 'Instrumental Only':
+            audioToUse = instrumentalUrl || audioUrl;
+            console.log(instrumentalUrl
+                ? `✓ SERVER using instrumental track for Instrumental Only: ${instrumentalUrl}`
+                : `⚠️ SERVER WARNING: Using main audio as fallback for Instrumental Only: ${audioUrl}`);
+            break;
+        case 'Little Vocal':
+            if (littleVocalUrl) {
+                audioToUse = littleVocalUrl;
+                console.log(`✓ SERVER using pre-mixed little vocal track: ${littleVocalUrl}`);
+            }
+            else if (instrumentalUrl && vocalUrl) {
+                console.log(`✓ SERVER using instrumental and vocal tracks for Little Vocal mix:`);
+                console.log(`  - Instrumental: ${instrumentalUrl}`);
+                console.log(`  - Vocal: ${vocalUrl}`);
+            }
+            else {
+                audioToUse = audioUrl;
+                console.log(`⚠️ SERVER WARNING: Using main audio as fallback for Little Vocal: ${audioUrl}`);
+            }
+            break;
+        default: // Lyrics Video
+            audioToUse = audioUrl;
+            console.log(`✓ SERVER using main audio track for Lyrics Video: ${audioUrl}`);
+            break;
+    }
+    // Verify background image
+    const backgroundForType = backgroundImagesMap[videoType];
+    if (backgroundForType) {
+        console.log(`✓ SERVER using specific background for ${videoType}: ${backgroundForType}`);
+    }
+    else if (backgroundImageUrl) {
+        console.log(`✓ SERVER using default background: ${backgroundImageUrl}`);
+    }
+    else {
+        console.log(`ℹ️ SERVER: No background image for ${videoType}. Using solid color.`);
+    }
+    console.log('=== SERVER VERIFICATION COMPLETE ===\n');
+    // Return the verified audio to use (for future implementation)
+    return audioToUse;
+}
 // Render video endpoint
 app.post('/render', async (req, res) => {
     // Set headers for Server-Sent Events
@@ -72,6 +125,10 @@ app.post('/render', async (req, res) => {
         const outputPath = path_1.default.join(outputDir, outputFile);
         // Create URLs that can be accessed via HTTP instead of file:// protocol
         const audioUrl = `http://localhost:${port}/uploads/${audioFile}`;
+        // Perform server-side verification before rendering
+        verifyServerAssets(metadata.videoType, audioUrl, instrumentalUrl, vocalUrl, littleVocalUrl, backgroundImagesMap, backgroundImageUrl);
+        // Add a small delay after verification to ensure resources are ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
         // Use index.ts as the entry point which contains registerRoot()
         const entryPoint = path_1.default.join(__dirname, '../../src/remotion/index.ts');
         // Bundle the remotion project

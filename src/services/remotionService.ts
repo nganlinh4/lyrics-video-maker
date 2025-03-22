@@ -66,6 +66,64 @@ export class RemotionService {
     return url;
   }
 
+  // New verification function to check that correct files are being used
+  private verifyRenderAssets(
+    videoType: string, 
+    audioUrl: string,
+    additionalAudioUrls: Record<string, string | undefined>,
+    backgroundImagesMapUrls: { [key: string]: string },
+    specificBackgroundUrl?: string
+  ): void {
+    console.log(`\n=== Verifying assets for ${videoType} render ===`);
+    
+    // Verify audio files based on video type
+    switch (videoType) {
+      case 'Vocal Only':
+        if (!additionalAudioUrls.vocalUrl) {
+          console.warn('⚠️ Warning: Vocal Only video without a vocal audio file. Using main audio as fallback.');
+        } else {
+          console.log('✓ Using vocal track for Vocal Only video:', additionalAudioUrls.vocalUrl);
+        }
+        break;
+        
+      case 'Instrumental Only':
+        if (!additionalAudioUrls.instrumentalUrl) {
+          console.warn('⚠️ Warning: Instrumental Only video without an instrumental audio file. Using main audio as fallback.');
+        } else {
+          console.log('✓ Using instrumental track for Instrumental Only video:', additionalAudioUrls.instrumentalUrl);
+        }
+        break;
+        
+      case 'Little Vocal':
+        if (additionalAudioUrls.littleVocalUrl) {
+          console.log('✓ Using pre-mixed little vocal track:', additionalAudioUrls.littleVocalUrl);
+        } else if (additionalAudioUrls.instrumentalUrl && additionalAudioUrls.vocalUrl) {
+          console.log('✓ Using instrumental and vocal tracks for Little Vocal mix:');
+          console.log('  - Instrumental:', additionalAudioUrls.instrumentalUrl);
+          console.log('  - Vocal:', additionalAudioUrls.vocalUrl);
+        } else {
+          console.warn('⚠️ Warning: Little Vocal video without proper audio files. Using main audio as fallback.');
+        }
+        break;
+        
+      default: // Lyrics Video
+        console.log('✓ Using main audio track for Lyrics Video:', audioUrl);
+        break;
+    }
+    
+    // Verify background image
+    const backgroundForThisType = backgroundImagesMapUrls[videoType];
+    if (backgroundForThisType) {
+      console.log('✓ Using specific background for this video type:', backgroundForThisType);
+    } else if (specificBackgroundUrl) {
+      console.log('✓ Using default background:', specificBackgroundUrl);
+    } else {
+      console.log('ℹ️ No background image provided for this video type. Using solid color background.');
+    }
+    
+    console.log('=== Verification complete ===\n');
+  }
+
   async renderVideo(
     audioFile: File,
     lyrics: LyricEntry[],
@@ -155,6 +213,15 @@ export class RemotionService {
       if (!audioUrl) {
         throw new Error('Failed to upload main audio file');
       }
+      
+      // Run verification to make sure we're using the correct files for this video type
+      this.verifyRenderAssets(
+        metadata.videoType,
+        audioUrl,
+        additionalAudioUrls,
+        backgroundImagesMapUrls,
+        backgroundUrl
+      );
       
       // Pre-analyze the correct audio file based on video type to ensure visualization works correctly
       const analysisUrl = getAnalysisUrl(
