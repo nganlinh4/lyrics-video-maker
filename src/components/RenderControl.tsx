@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Player } from '@remotion/player';
 import { LyricEntry } from '../types';
 import { LyricsVideoContent } from './LyricsVideo';
 import VideoPreview from './VideoPreview';
 import remotionService from '../services/remotionService';
+import { useQueue } from '../contexts/QueueContext';
 
 // API URL for the server
 const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
@@ -74,6 +75,9 @@ interface RenderControlProps {
     artist: string;
     songTitle: string;
     videoType: 'Lyrics Video' | 'Vocal Only' | 'Instrumental Only' | 'Little Vocal';
+    lyricsLineThreshold: number;
+    metadataPosition: number;
+    metadataWidth: number;
   };
   onRenderComplete: (videoPath: string) => void;
   vocalFile?: File | null;
@@ -101,6 +105,16 @@ export const RenderControl: React.FC<RenderControlProps> = ({
   const [renderedVideos, setRenderedVideos] = useState<{ type: string; url: string }[]>([]);
   const [status, setStatus] = useState<string>('');
   const [renderingCompleted, setRenderingCompleted] = useState(false);
+  
+  // Queue context
+  const { 
+    queue, 
+    addToQueue, 
+    updateQueueItem, 
+    currentProcessingItem, 
+    setCurrentProcessingItem,
+    isProcessing 
+  } = useQueue();
 
   const videoTypes = [
     'Lyrics Video',
@@ -108,6 +122,153 @@ export const RenderControl: React.FC<RenderControlProps> = ({
     'Instrumental Only',
     'Little Vocal'
   ] as const;
+
+  // Check if we can add files to queue
+  const canAddToQueue = audioFile && 
+                     lyrics && 
+                     Array.isArray(lyrics) && 
+                     lyrics.length > 0 && 
+                     durationInSeconds > 0 && 
+                     !isRendering;
+
+  // Function to add current project to queue
+  const handleAddToQueue = () => {
+    if (!canAddToQueue || !audioFile) return;
+
+    // Make sure to pass the full metadata object with all required properties
+    addToQueue({
+      audioFile,
+      lyrics: lyrics || [],
+      durationInSeconds,
+      albumArtFile,
+      backgroundFiles: backgroundFiles || {},
+      metadata: {
+        artist: metadata.artist,
+        songTitle: metadata.songTitle,
+        videoType: metadata.videoType,
+        lyricsLineThreshold: metadata.lyricsLineThreshold,
+        metadataPosition: metadata.metadataPosition,
+        metadataWidth: metadata.metadataWidth
+      },
+      vocalFile,
+      instrumentalFile,
+      littleVocalFile
+    });
+  };
+
+  // Process queue
+  useEffect(() => {
+    const processNextQueueItem = async () => {
+      // If already processing or queue is empty, do nothing
+      if (isProcessing || queue.length === 0) return;
+      
+      // Find the first pending item
+      const nextItem = queue.find(item => item.status === 'pending');
+      if (!nextItem) return;
+      
+      // Set as currently processing
+      setCurrentProcessingItem(nextItem.id);
+      updateQueueItem(nextItem.id, { status: 'processing', progress: 0 });
+      
+      try {
+        const results: { [videoType: string]: string } = {};
+        
+        // Process all video types for this item
+        for (const videoType of videoTypes) {
+          // Update for current video type
+          updateQueueItem(nextItem.id, { 
+            progress: 0
+          });
+          
+          // Create type-specific configuration for audio files based on the video type
+          const typeSpecificAudioConfig: { [key: string]: string } = {};
+          
+          // Add all available audio files
+          if (nextItem.vocalFile) {
+            typeSpecificAudioConfig.vocalUrl = URL.createObjectURL(nextItem.vocalFile);
+          }
+          if (nextItem.instrumentalFile) {
+            typeSpecificAudioConfig.instrumentalUrl = URL.createObjectURL(nextItem.instrumentalFile);
+          }
+          if (nextItem.littleVocalFile) {
+            typeSpecificAudioConfig.littleVocalUrl = URL.createObjectURL(nextItem.littleVocalFile);
+          }
+          
+          // Create background URLs map for all video types
+          const backgroundImagesMap: { [key: string]: string } = {};
+          Object.entries(nextItem.backgroundFiles).forEach(([bgVideoType, bgFile]) => {
+            if (bgFile) {
+              backgroundImagesMap[bgVideoType] = URL.createObjectURL(bgFile);
+            }
+          });
+
+          // Get the specific background for this video type, or fall back to the default
+          const currentBackgroundUrl = nextItem.backgroundFiles[videoType] 
+            ? URL.createObjectURL(nextItem.backgroundFiles[videoType]!) 
+            : (backgroundFile ? URL.createObjectURL(backgroundFile) : undefined);
+
+          // Render this video version
+          const videoPath = await remotionService.renderVideo(
+            nextItem.audioFile,
+            nextItem.lyrics,
+            nextItem.durationInSeconds,
+            {
+              albumArtUrl: nextItem.albumArtFile ? URL.createObjectURL(nextItem.albumArtFile) : undefined,
+              backgroundImageUrl: currentBackgroundUrl,
+              backgroundImagesMap,
+              metadata: { ...nextItem.metadata, videoType },
+              ...typeSpecificAudioConfig
+            },
+            (progress) => {
+              if (progress.status === 'error') {
+                updateQueueItem(nextItem.id, { 
+                  error: `Error rendering ${videoType}: ${progress.error}`
+                });
+              } else {
+                updateQueueItem(nextItem.id, { 
+                  progress: progress.progress
+                });
+              }
+            }
+          );
+
+          // Add result for this video type
+          results[videoType] = videoPath;
+
+          // Clean up URLs
+          Object.values(typeSpecificAudioConfig).forEach(url => URL.revokeObjectURL(url));
+          if (currentBackgroundUrl) URL.revokeObjectURL(currentBackgroundUrl);
+        }
+
+        // Clean up background URLs after all videos are rendered
+        for (const videoType of videoTypes) {
+          if (nextItem.backgroundFiles[videoType]) {
+            const url = URL.createObjectURL(nextItem.backgroundFiles[videoType]!);
+            URL.revokeObjectURL(url);
+          }
+        }
+
+        // Mark as complete with results
+        updateQueueItem(nextItem.id, { 
+          status: 'complete', 
+          progress: 1, 
+          result: results 
+        });
+      } catch (err) {
+        // Mark as error
+        updateQueueItem(nextItem.id, { 
+          status: 'error', 
+          error: err instanceof Error ? err.message : 'An unknown error occurred'
+        });
+      } finally {
+        // Clear current processing item
+        setCurrentProcessingItem(null);
+      }
+    };
+
+    // Process next item if available
+    processNextQueueItem();
+  }, [queue, isProcessing, currentProcessingItem, videoTypes]);
 
   const handleRender = async () => {
     if (!audioFile || !(audioFile instanceof File)) {
@@ -463,6 +624,14 @@ export const RenderControl: React.FC<RenderControlProps> = ({
           style={{ background: 'linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%)' }}
         >
           {isRendering ? `Rendering ${currentVersion || '...'}` : 'Render All Versions'}
+        </Button>
+        
+        <Button
+          onClick={handleAddToQueue}
+          disabled={!canAddToQueue}
+          style={{ background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)' }}
+        >
+          Add to Queue
         </Button>
       </ButtonContainer>
 

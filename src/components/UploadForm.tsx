@@ -174,23 +174,34 @@ interface UploadFormProps {
     metadata: VideoMetadata
   ) => void;
   onVideoPathChange: (path: string) => void;
+  initialValues?: {
+    audioFiles: AudioFiles;
+    lyrics: LyricEntry[] | null;
+    albumArtFile: File | null;
+    backgroundFiles: { [key: string]: File | null };
+    metadata: VideoMetadata;
+  };
 }
 
-const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChange }) => {
-  const [mainAudioFile, setMainAudioFile] = useState<File | null>(null);
-  const [instrumentalFile, setInstrumentalFile] = useState<File | null>(null);
-  const [vocalFile, setVocalFile] = useState<File | null>(null);
-  const [littleVocalFile, setLittleVocalFile] = useState<File | null>(null);
+const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChange, initialValues }) => {
+  const [mainAudioFile, setMainAudioFile] = useState<File | null>(initialValues?.audioFiles.main || null);
+  const [instrumentalFile, setInstrumentalFile] = useState<File | null>(initialValues?.audioFiles.instrumental || null);
+  const [vocalFile, setVocalFile] = useState<File | null>(initialValues?.audioFiles.vocal || null);
+  const [littleVocalFile, setLittleVocalFile] = useState<File | null>(initialValues?.audioFiles.littleVocal || null);
   const [lyricsFile, setLyricsFile] = useState<File | null>(null);
-  const [albumArtFile, setAlbumArtFile] = useState<File | null>(null);
-  const [backgroundFiles, setBackgroundFiles] = useState<{ [key in VideoMetadata['videoType']]?: File | null }>({});
-  const [lyrics, setLyrics] = useState<LyricEntry[] | null>(null);
+  const [albumArtFile, setAlbumArtFile] = useState<File | null>(initialValues?.albumArtFile || null);
+  const [backgroundFiles, setBackgroundFiles] = useState<{ [key in VideoMetadata['videoType']]?: File | null }>(
+    initialValues?.backgroundFiles || {}
+  );
+  const [lyrics, setLyrics] = useState<LyricEntry[] | null>(initialValues?.lyrics || null);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<{[key: string]: boolean}>({});
   const [videoPath, setVideoPath] = useState<string | null>(null);
-  const [artist, setArtist] = useState('');
-  const [songTitle, setSongTitle] = useState('');
-  const [videoType, setVideoType] = useState<VideoMetadata['videoType']>('Lyrics Video');
+  const [artist, setArtist] = useState(initialValues?.metadata.artist || '');
+  const [songTitle, setSongTitle] = useState(initialValues?.metadata.songTitle || '');
+  const [videoType, setVideoType] = useState<VideoMetadata['videoType']>(
+    initialValues?.metadata.videoType || 'Lyrics Video'
+  );
   
   const mainAudioInputRef = useRef<HTMLInputElement>(null);
   const lyricsInputRef = useRef<HTMLInputElement>(null);
