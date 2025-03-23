@@ -57,6 +57,63 @@ const MusicIcon = () => (
   </svg>
 );
 
+// App content component with improved layout
+const AppContent: React.FC = () => {
+  const { t } = useLanguage();
+  const { activeWorkspace } = useTabs();
+  
+  return (
+    <PageContainer>
+      <Header />
+      <TabBar />
+      <TwoColumnLayout>
+        <WorkspaceColumn>
+          {activeWorkspace && (
+            <Workspace tabId={activeWorkspace.id} />
+          )}
+        </WorkspaceColumn>
+        <QueueColumn>
+          <QueueContainer>
+            <QueueTitle>{t('renderQueue')}</QueueTitle>
+            <QueueManager />
+          </QueueContainer>
+        </QueueColumn>
+      </TwoColumnLayout>
+      <Footer>
+        <p>© {new Date().getFullYear()} Lyrics Video Maker</p>
+        <p>Version 1.0.0</p>
+      </Footer>
+    </PageContainer>
+  );
+};
+
+// Main App component
+function App() {
+  return (
+    <Router>
+      <CustomThemeProvider>
+        <ThemeConsumer>
+          {(themeContext) => themeContext && (
+            <ThemeProvider theme={themeContext.theme === 'dark' ? darkTheme : lightTheme}>
+              <LanguageProvider>
+                <QueueProvider>
+                  <TabsProvider>
+                    <GlobalStyle />
+                    <Routes>
+                      <Route path="/" element={<AppContent />} />
+                    </Routes>
+                  </TabsProvider>
+                </QueueProvider>
+              </LanguageProvider>
+            </ThemeProvider>
+          )}
+        </ThemeConsumer>
+      </CustomThemeProvider>
+    </Router>
+  );
+}
+
+// Styled components
 const HeaderContainer = styled.header`
   background: linear-gradient(135deg, var(--header-gradient-start), var(--header-gradient-end));
   color: var(--header-text);
@@ -111,46 +168,54 @@ const Controls = styled.div`
   }
 `;
 
-const ControlButton = styled.button`
-  background: transparent;
-  border: none;
-  color: var(--header-text);
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-size: 0.9rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+const TwoColumnLayout = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  width: 100%;
   
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-  
-  svg {
-    margin-right: 0.5rem;
-    font-size: 1.25rem;
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
   }
 `;
 
-const Select = styled.select`
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--header-text);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.15);
+const WorkspaceColumn = styled.div`
+  min-width: 0; /* Allows content to shrink below min-content width */
+`;
+
+const QueueColumn = styled.div`
+  @media (max-width: 1200px) {
+    grid-row: 1;
   }
+`;
+
+const QueueContainer = styled.div`
+  background: var(--card-background);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px var(--shadow-color);
+  padding: 1.5rem;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  transition: background-color 0.3s, box-shadow 0.3s;
   
-  option {
-    background: var(--dropdown-background);
-    color: var(--text-color);
+  @media (max-width: 1200px) {
+    position: static;
+    max-height: none;
   }
+`;
+
+const QueueTitle = styled.h2`
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--heading-color);
+  font-size: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
 `;
 
 const GlobalStyle = createGlobalStyle`
@@ -232,54 +297,6 @@ const PageContainer = styled.div`
   transition: background-color 0.3s ease;
 `;
 
-const MainContent = styled.main`
-  flex: 1;
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-  
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
-`;
-
-const ContentContainer = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  
-  @media (min-width: 1024px) {
-    grid-template-columns: 3fr 2fr;
-  }
-`;
-
-const SectionCard = styled.section`
-  background: var(--card-background);
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
-  overflow: hidden;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
-  }
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.5rem;
-  margin: 0;
-  padding: 1.25rem;
-  border-bottom: 1px solid var(--border-color);
-  background-color: var(--section-header-bg);
-  color: var(--heading-color);
-`;
-
-const SectionContent = styled.div`
-  padding: 1.5rem;
-`;
-
 const Footer = styled.footer`
   text-align: center;
   padding: 1.5rem;
@@ -292,106 +309,6 @@ const Footer = styled.footer`
     margin: 0.5rem 0;
     font-size: 0.9rem;
   }
-`;
-
-// Type definitions for initial values and queue item
-interface AudioFiles {
-  main: File | null;
-  instrumental: File | null;
-  vocal: File | null;
-  littleVocal: File | null;
-}
-
-interface VideoMetadata {
-  artist: string;
-  songTitle: string;
-  videoType: 'Lyrics Video' | 'Vocal Only' | 'Instrumental Only' | 'Little Vocal';
-  lyricsLineThreshold: number;
-  metadataPosition: number;
-  metadataWidth: number;
-}
-
-interface FormInitialValues {
-  audioFiles: AudioFiles;
-  lyrics: LyricEntry[] | null;
-  albumArtFile: File | null;
-  backgroundFiles: { [key: string]: File | null };
-  metadata: VideoMetadata;
-}
-
-export type QueueItemStatus = 'pending' | 'processing' | 'completed' | 'failed';
-
-export interface QueueItemData {
-  id: string;
-  status: QueueItemStatus;
-  progress: number;
-  artist: string;
-  songTitle: string;
-  videoType: string;
-  outputPath?: string;
-  errorMessage?: string;
-}
-
-// App content component with tabs
-const AppContent: React.FC = () => {
-  const { t } = useLanguage();
-  const { activeWorkspace } = useTabs();
-  
-  return (
-    <PageContainer>
-      <Header />
-      <TabBar />
-      <MainContent>
-        {activeWorkspace && (
-          <Workspace tabId={activeWorkspace.id} />
-        )}
-        <QueueSection>
-          <SectionCard>
-            <SectionTitle>{t('renderQueue')}</SectionTitle>
-            <SectionContent>
-              <QueueManager />
-            </SectionContent>
-          </SectionCard>
-        </QueueSection>
-      </MainContent>
-      <Footer>
-        <p>© {new Date().getFullYear()} Lyrics Video Maker</p>
-        <p>Version 1.0.0</p>
-      </Footer>
-    </PageContainer>
-  );
-};
-
-// Main App component
-function App() {
-  return (
-    <Router>
-      <CustomThemeProvider>
-        <ThemeConsumer>
-          {(themeContext) => themeContext && (
-            <ThemeProvider theme={themeContext.theme === 'dark' ? darkTheme : lightTheme}>
-              <LanguageProvider>
-                <QueueProvider>
-                  <TabsProvider>
-                    <GlobalStyle />
-                    <Routes>
-                      <Route path="/" element={<AppContent />} />
-                    </Routes>
-                  </TabsProvider>
-                </QueueProvider>
-              </LanguageProvider>
-            </ThemeProvider>
-          )}
-        </ThemeConsumer>
-      </CustomThemeProvider>
-    </Router>
-  );
-}
-
-// Adding QueueSection styling
-const QueueSection = styled.div`
-  margin-top: 2rem;
-  width: 100%;
 `;
 
 export default App;

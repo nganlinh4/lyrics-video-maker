@@ -321,6 +321,10 @@ export const translations: Translations = {
   lyricsLineThreshold: {
     en: 'Lyrics Line Threshold',
     ko: '가사 줄 임계값'
+  },
+  adjustPreview: {
+    en: 'Adjust Preview',
+    ko: '미리보기 조정'
   }
 };
 
