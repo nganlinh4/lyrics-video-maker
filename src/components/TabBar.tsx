@@ -1,9 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useTabs } from '../contexts/TabsContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const TabBar: React.FC = () => {
   const { tabs, activeTabId, addTab, closeTab, activateTab } = useTabs();
+  const { t } = useLanguage();
 
   return (
     <TabBarContainer>
@@ -32,13 +34,14 @@ const TabBar: React.FC = () => {
 const TabBarContainer = styled.div`
   display: flex;
   align-items: center;
-  background-color: #e8eaed;
-  border-bottom: 1px solid #dadce0;
+  background-color: var(--tab-background);
+  border-bottom: 1px solid var(--border-color);
   height: 40px;
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
+  transition: background-color 0.3s;
   
   &::-webkit-scrollbar {
     display: none;
@@ -63,7 +66,7 @@ const TabItem = styled.div<{ active: boolean }>`
   max-width: 240px;
   height: 38px;
   padding: 0 15px;
-  background-color: ${props => props.active ? '#fff' : '#e8eaed'};
+  background-color: ${props => props.active ? 'var(--active-tab)' : 'var(--tab-background)'};
   border-radius: 8px 8px 0 0;
   margin-right: 1px;
   margin-left: 1px;
@@ -75,7 +78,7 @@ const TabItem = styled.div<{ active: boolean }>`
   transition: background-color 0.2s;
   
   &:hover {
-    background-color: ${props => props.active ? '#fff' : '#f1f3f4'};
+    background-color: ${props => props.active ? 'var(--active-tab)' : 'var(--hover-color)'};
   }
   
   &::after {
@@ -85,7 +88,7 @@ const TabItem = styled.div<{ active: boolean }>`
     left: 0;
     right: 0;
     height: 2px;
-    background-color: ${props => props.active ? '#1a73e8' : 'transparent'};
+    background-color: ${props => props.active ? 'var(--accent-color)' : 'transparent'};
   }
 `;
 
@@ -95,8 +98,9 @@ const TabTitle = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 13px;
-  color: #202124;
+  color: var(--text-color);
   margin-right: 8px;
+  transition: color 0.3s;
 `;
 
 const CloseButton = styled.div`
@@ -108,13 +112,14 @@ const CloseButton = styled.div`
   justify-content: center;
   font-size: 16px;
   line-height: 1;
-  color: #5f6368;
+  color: var(--text-color);
+  opacity: 0.7;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.3s;
   
   &:hover {
-    background-color: #dadce0;
-    color: #202124;
+    background-color: var(--hover-color);
+    color: var(--text-color);
   }
 `;
 
@@ -123,19 +128,19 @@ const AddTabButton = styled.div`
   height: 28px;
   min-width: 28px;
   border-radius: 50%;
-  background-color: #e8eaed;
+  background-color: var(--hover-color);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 22px;
   line-height: 1;
-  color: #5f6368;
+  color: var(--text-color);
   cursor: pointer;
   margin: 0 8px;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.3s;
   
   &:hover {
-    background-color: #dadce0;
+    background-color: var(--border-color);
   }
 `;
 

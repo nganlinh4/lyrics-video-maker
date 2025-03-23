@@ -1,10 +1,12 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useQueue, QueueItem } from '../contexts/QueueContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import VideoPreview from './VideoPreview';
 
 const QueueManager: React.FC = () => {
   const { queue, removeFromQueue, clearQueue, isProcessing, currentProcessingItem } = useQueue();
+  const { t } = useLanguage();
 
   if (queue.length === 0) {
     return null;
@@ -18,23 +20,23 @@ const QueueManager: React.FC = () => {
   return (
     <QueueContainer>
       <QueueHeader>
-        <h3>Render Queue</h3>
+        <h3>{t('renderQueue')}</h3>
         <QueueActions>
           <QueueButton 
             onClick={clearQueue}
             disabled={isProcessing}
             title={isProcessing ? "Can't clear queue while rendering" : "Clear all items from queue"}
           >
-            Clear Queue
+            {t('clearQueue')}
           </QueueButton>
         </QueueActions>
       </QueueHeader>
 
       <QueueStats>
-        <QueueStat>Pending: {pendingItems.length}</QueueStat>
-        <QueueStat>Processing: {processingItems.length}</QueueStat>
-        <QueueStat>Completed: {completedItems.length}</QueueStat>
-        <QueueStat>Failed: {errorItems.length}</QueueStat>
+        <QueueStat>{t('pending')}: {pendingItems.length}</QueueStat>
+        <QueueStat>{t('processing')}: {processingItems.length}</QueueStat>
+        <QueueStat>{t('completed')}: {completedItems.length}</QueueStat>
+        <QueueStat>{t('failed')}: {errorItems.length}</QueueStat>
       </QueueStats>
 
       <QueueList>
@@ -45,10 +47,10 @@ const QueueManager: React.FC = () => {
                 {item.metadata.artist} - {item.metadata.songTitle}
               </QueueItemTitle>
               <QueueItemStatus status={item.status}>
-                {item.status === 'pending' && 'Pending'}
-                {item.status === 'processing' && `Processing (${Math.round(item.progress * 100)}%)`}
-                {item.status === 'complete' && 'Complete'}
-                {item.status === 'error' && 'Failed'}
+                {item.status === 'pending' && t('pending')}
+                {item.status === 'processing' && `${t('processing')} (${Math.round(item.progress * 100)}%)`}
+                {item.status === 'complete' && t('complete')}
+                {item.status === 'error' && t('failed')}
               </QueueItemStatus>
             </QueueItemHeader>
 
@@ -79,7 +81,7 @@ const QueueManager: React.FC = () => {
                   onClick={() => removeFromQueue(item.id)} 
                   disabled={isProcessing && currentProcessingItem === item.id}
                 >
-                  Remove
+                  {t('remove')}
                 </QueueButton>
               )}
             </QueueItemActions>
@@ -93,9 +95,15 @@ const QueueManager: React.FC = () => {
 const QueueContainer = styled.div`
   margin: 20px 0;
   padding: 20px;
-  background-color: #f8f9fa;
+  background-color: var(--card-background);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px var(--shadow-color);
+  transition: background-color 0.3s, box-shadow 0.3s;
+  
+  h3 {
+    color: var(--text-color);
+    transition: color 0.3s;
+  }
 `;
 
 const QueueHeader = styled.div`
@@ -115,7 +123,7 @@ const QueueActions = styled.div`
 `;
 
 const QueueButton = styled.button`
-  background: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%);
+  background: linear-gradient(135deg, var(--accent-color) 0%, #a777e3 100%);
   color: white;
   padding: 8px 15px;
   border: none;
@@ -143,10 +151,11 @@ const QueueStats = styled.div`
 
 const QueueStat = styled.div`
   padding: 5px 10px;
-  background-color: #e9ecef;
+  background-color: var(--hover-color);
   border-radius: 20px;
   font-size: 0.85rem;
-  color: #495057;
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
 `;
 
 const QueueList = styled.div`
@@ -157,9 +166,11 @@ const QueueList = styled.div`
 
 const QueueItemContainer = styled.div`
   padding: 15px;
-  background-color: white;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px var(--shadow-color);
+  transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
 `;
 
 const QueueItemHeader = styled.div`
@@ -172,6 +183,8 @@ const QueueItemHeader = styled.div`
 const QueueItemTitle = styled.div`
   font-weight: 600;
   font-size: 1.1rem;
+  color: var(--text-color);
+  transition: color 0.3s;
 `;
 
 const QueueItemStatus = styled.div<{ status: QueueItem['status'] }>`
@@ -181,12 +194,14 @@ const QueueItemStatus = styled.div<{ status: QueueItem['status'] }>`
   font-weight: 500;
   
   ${({ status }) => {
-    if (status === 'pending') return 'background-color: #e9ecef; color: #495057;';
+    if (status === 'pending') return 'background-color: var(--hover-color); color: var(--text-color);';
     if (status === 'processing') return 'background-color: #cff4fc; color: #055160;';
     if (status === 'complete') return 'background-color: #d1e7dd; color: #0f5132;';
     if (status === 'error') return 'background-color: #f8d7da; color: #842029;';
     return '';
   }}
+  
+  transition: background-color 0.3s, color 0.3s;
 `;
 
 const QueueItemActions = styled.div`
@@ -199,16 +214,17 @@ const QueueItemActions = styled.div`
 const ProgressContainer = styled.div`
   width: 100%;
   height: 15px;
-  background-color: #f0f0f0;
+  background-color: var(--hover-color);
   border-radius: 8px;
   margin: 10px 0;
   overflow: hidden;
+  transition: background-color 0.3s;
 `;
 
 const ProgressBar = styled.div<{ width: number }>`
   width: ${props => props.width}%;
   height: 100%;
-  background: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%);
+  background: linear-gradient(135deg, var(--accent-color) 0%, #a777e3 100%);
   transition: width 0.3s ease;
 `;
 
@@ -226,7 +242,8 @@ const ResultItem = styled.div`
 const ResultLabel = styled.div`
   font-weight: 500;
   margin-bottom: 5px;
-  color: #495057;
+  color: var(--text-color);
+  transition: color 0.3s;
 `;
 
 const ErrorMessage = styled.div`

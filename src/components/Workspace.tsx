@@ -8,6 +8,7 @@ import VideoPreview from './VideoPreview';
 import { LyricEntry, VideoMetadata, AudioFiles } from '../types';
 import { analyzeAudio } from '../utils/audioAnalyzer';
 import { useTabs } from '../contexts/TabsContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Types and props
 interface WorkspaceProps {
@@ -24,6 +25,7 @@ interface LocalAudioFiles {
 
 const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
   const { updateTabContent, activeWorkspace } = useTabs();
+  const { t } = useLanguage();
   
   // Always declare hooks at the top level, regardless of conditions
   const [audioUrls, setAudioUrls] = useState({
@@ -32,28 +34,30 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
     vocal: '',
     littleVocal: ''
   });
-  const [albumArtUrl, setAlbumArtUrl] = useState('');
-  const [backgroundUrls, setBackgroundUrls] = useState<{
-    [key in VideoMetadata['videoType']]?: string;
-  }>({});
-
-  // Get workspace data or use defaults for non-active workspace
-  const isActiveWorkspace = activeWorkspace && activeWorkspace.id === tabId;
-  const workspaceData = isActiveWorkspace ? activeWorkspace : null;
+  const [albumArtUrl, setAlbumArtUrl] = useState<string>('');
+  const [backgroundUrls, setBackgroundUrls] = useState<{[key: string]: string}>({});
   
-  // Separate URL management for audio and images - runs only when this is the active workspace
+  // Check if this workspace is active
+  const isActiveWorkspace = activeWorkspace?.id === tabId;
+  const workspaceData = activeWorkspace;
+
+  // Update audio URLs when the workspace data changes
   useEffect(() => {
-    if (!isActiveWorkspace || !workspaceData) return;
+    if (!isActiveWorkspace || !workspaceData?.audioFiles) return;
     
-    // Handle audio URLs and perform analysis when files change
     const processAudio = async () => {
-      const audioFiles = workspaceData.audioFiles;
+      // Clean up previous object URLs
+      Object.values(audioUrls).forEach(url => {
+        if (url) URL.revokeObjectURL(url);
+      });
+      
+      const { main, instrumental, vocal, littleVocal } = workspaceData.audioFiles;
       
       const newAudioUrls = {
-        main: audioFiles.main ? URL.createObjectURL(audioFiles.main) : '',
-        instrumental: audioFiles.instrumental ? URL.createObjectURL(audioFiles.instrumental) : '',
-        vocal: audioFiles.vocal ? URL.createObjectURL(audioFiles.vocal) : '',
-        littleVocal: audioFiles.littleVocal ? URL.createObjectURL(audioFiles.littleVocal) : ''
+        main: main ? URL.createObjectURL(main) : '',
+        instrumental: instrumental ? URL.createObjectURL(instrumental) : '',
+        vocal: vocal ? URL.createObjectURL(vocal) : '',
+        littleVocal: littleVocal ? URL.createObjectURL(littleVocal) : ''
       };
       
       setAudioUrls(newAudioUrls);
@@ -89,38 +93,42 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
     if (albumArtFile) {
       const url = URL.createObjectURL(albumArtFile);
       setAlbumArtUrl(url);
-      return () => URL.revokeObjectURL(url);
+      
+      return () => {
+        URL.revokeObjectURL(url);
+      };
     } else {
       setAlbumArtUrl('');
     }
   }, [isActiveWorkspace, workspaceData?.albumArtFile]);
 
-  // Update the effect for background URLs management
+  // Separate effect for background images
   useEffect(() => {
     if (!isActiveWorkspace || !workspaceData) return;
     
-    const backgroundFiles = workspaceData.backgroundFiles;
+    // Clean up previous URLs
+    Object.values(backgroundUrls).forEach(url => {
+      URL.revokeObjectURL(url);
+    });
     
-    // Create object to store all background URLs
     const newBackgroundUrls: {[key: string]: string} = {};
     
-    // Process each background file
-    Object.entries(backgroundFiles).forEach(([type, file]) => {
+    // Create URLs for each video type if a background is available
+    Object.entries(workspaceData.backgroundFiles).forEach(([videoType, file]) => {
       if (file) {
-        const url = URL.createObjectURL(file);
-        newBackgroundUrls[type] = url;
+        newBackgroundUrls[videoType] = URL.createObjectURL(file);
       }
     });
     
     setBackgroundUrls(newBackgroundUrls);
     
-    // Cleanup function for background URLs
+    // Cleanup function
     return () => {
-      Object.values(backgroundUrls).forEach(url => {
-        if (url) URL.revokeObjectURL(url);
+      Object.values(newBackgroundUrls).forEach(url => {
+        URL.revokeObjectURL(url);
       });
     };
-  }, [isActiveWorkspace, workspaceData?.backgroundFiles]);  // Remove backgroundUrls from dependencies
+  }, [isActiveWorkspace, workspaceData?.backgroundFiles]);
 
   // If this workspace is not active, don't render it
   if (!isActiveWorkspace || !workspaceData) {
@@ -193,6 +201,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
     });
   };
 
+  // Handle metadata position change
   const handleMetadataPositionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPosition = parseInt(e.target.value, 10);
     updateTabContent(tabId, {
@@ -227,7 +236,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
     <WorkspaceContainer>
       {canShowPreview && (
         <Card>
-          <h2>Video Preview</h2>
+          <h2>{t('videoPreview')}</h2>
           <PreviewContainer>
             <Player
               key={`player-${metadata.videoType}-${albumArtUrl}-${backgroundUrls[metadata.videoType] || ''}-${audioUrls.main}-${audioUrls.instrumental}-${audioUrls.vocal}-${audioUrls.littleVocal}`}
@@ -258,7 +267,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
           <ControlPanel>
             <SliderControl>
               <SliderLabel>
-                Metadata Position
+                {t('metadataPosition')}
                 <SliderValue>{metadata.metadataPosition}px</SliderValue>
               </SliderLabel>
               <input
@@ -272,7 +281,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
             </SliderControl>
             <SliderControl>
               <SliderLabel>
-                Metadata Width
+                {t('metadataWidth')}
                 <SliderValue>{metadata.metadataWidth}px</SliderValue>
               </SliderLabel>
               <input
@@ -286,7 +295,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
             </SliderControl>
             <SliderControl>
               <SliderLabel>
-                Lyrics Line Threshold
+                {t('lyricsLineThreshold')}
                 <SliderValue>{metadata.lyricsLineThreshold}</SliderValue>
               </SliderLabel>
               <input
@@ -339,7 +348,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
       
       {videoPath && (
         <Card>
-          <h2>Final Video</h2>
+          <h2>{t('finalVideo')}</h2>
           <VideoPreview videoUrl={videoPath} />
         </Card>
       )}
@@ -356,13 +365,20 @@ const WorkspaceContainer = styled.div`
 `;
 
 const Card = styled.div`
-  background: white;
+  background: var(--card-background);
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px var(--shadow-color);
   padding: 20px;
   margin: 10px 0;
   width: 100%;
   max-width: 800px;
+  transition: background-color 0.3s, box-shadow 0.3s;
+
+  h2 {
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    transition: color 0.3s;
+  }
 `;
 
 const PreviewContainer = styled.div`
@@ -377,8 +393,16 @@ const ControlPanel = styled.div`
   gap: 15px;
   margin: 15px 0;
   padding: 15px;
-  background-color: #f5f7fa;
+  background-color: var(--hover-color);
   border-radius: 8px;
+  transition: background-color 0.3s;
+
+  small {
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: 0.85rem;
+    transition: color 0.3s;
+  }
 `;
 
 const SliderControl = styled.div`
@@ -392,15 +416,19 @@ const SliderLabel = styled.label`
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
+  color: var(--text-color);
+  transition: color 0.3s;
 `;
 
 const SliderValue = styled.span`
   font-weight: bold;
-  background-color: #e0e0e0;
+  background-color: var(--input-background);
+  color: var(--text-color);
   padding: 2px 6px;
   border-radius: 4px;
   min-width: 40px;
   text-align: center;
+  transition: background-color 0.3s, color 0.3s;
 `;
 
 export default Workspace;

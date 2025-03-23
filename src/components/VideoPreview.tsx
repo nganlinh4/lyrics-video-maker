@@ -1,12 +1,15 @@
 import React from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Props {
   videoUrl: string;
 }
 
 const VideoPreview: React.FC<Props> = ({ videoUrl }) => {
+  const { t } = useLanguage();
+  
   if (!videoUrl) {
-    return <p>No video to preview.</p>;
+    return <p>{t('noVideo')}</p>;
   }
 
   return (

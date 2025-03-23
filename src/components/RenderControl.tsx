@@ -6,6 +6,7 @@ import { LyricsVideoContent } from './LyricsVideo';
 import VideoPreview from './VideoPreview';
 import remotionService from '../services/remotionService';
 import { useQueue } from '../contexts/QueueContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // API URL for the server
 const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
@@ -15,7 +16,7 @@ const Container = styled.div`
 `;
 
 const Button = styled.button`
-  background: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%);
+  background: linear-gradient(135deg, var(--accent-color) 0%, #a777e3 100%);
   color: white;
   padding: 10px 20px;
   border: none;
@@ -37,31 +38,34 @@ const Button = styled.button`
 const ProgressContainer = styled.div`
   width: 100%;
   height: 20px;
-  background-color: #f0f0f0;
+  background-color: var(--hover-color);
   border-radius: 10px;
   margin: 10px 0;
   overflow: hidden;
+  transition: background-color 0.3s;
 `;
 
 const ProgressBar = styled.div<{ width: number }>`
   width: ${props => props.width}%;
   height: 100%;
-  background: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%);
+  background: linear-gradient(135deg, var(--accent-color) 0%, #a777e3 100%);
   transition: width 0.3s ease;
 `;
 
 const ProgressText = styled.div`
   text-align: center;
   margin: 5px 0;
-  color: #666;
+  color: var(--text-color);
+  transition: color 0.3s;
 `;
 
 const InfoText = styled.div`
   margin: 10px 0;
   padding: 10px;
-  background-color: #f8f9fa;
+  background-color: var(--hover-color);
   border-radius: 5px;
-  color: #666;
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
 `;
 
 interface RenderControlProps {
@@ -98,6 +102,7 @@ export const RenderControl: React.FC<RenderControlProps> = ({
   instrumentalFile,
   littleVocalFile
 }) => {
+  const { t } = useLanguage();
   const [isRendering, setIsRendering] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -637,8 +642,7 @@ export const RenderControl: React.FC<RenderControlProps> = ({
   return (
     <Container>
       <InfoText>
-        Note: Videos are rendered through the queue system. Add either the current version or all four versions
-        to the queue, and they'll be processed in the background while you work on other songs.
+        {t('note')}: {t('videosRenderedNote')}
       </InfoText>
       
       <ButtonContainer>
@@ -647,7 +651,7 @@ export const RenderControl: React.FC<RenderControlProps> = ({
           disabled={!canAddToQueue}
           style={{ background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)', flex: 1 }}
         >
-          Add Version to Queue
+          {t('addToQueue')}
         </Button>
         
         <Button
@@ -655,7 +659,7 @@ export const RenderControl: React.FC<RenderControlProps> = ({
           disabled={!canAddToQueue}
           style={{ background: 'linear-gradient(135deg, #E91E63 0%, #C2185B 100%)', flex: 1 }}
         >
-          Add All Versions to Queue
+          {t('addAllVersions')}
         </Button>
       </ButtonContainer>
 
@@ -666,14 +670,14 @@ export const RenderControl: React.FC<RenderControlProps> = ({
           </ProgressContainer>
           <ProgressText>
             {currentVersion ? `${currentVersion}: ` : ''}
-            {Math.round(progress * 100)}% Complete
+            {Math.round(progress * 100)}% {t('complete')}
           </ProgressText>
         </>
       )}
       
       {renderedVideos.length > 0 && (
         <VideoList>
-          <h3>Rendered Videos:</h3>
+          <h3>{t('renderedVideos')}</h3>
           {renderedVideos.map((video, index) => (
             <VideoItem key={index}>
               <VideoTypeLabel>{video.type}</VideoTypeLabel>
@@ -683,12 +687,12 @@ export const RenderControl: React.FC<RenderControlProps> = ({
         </VideoList>
       )}
 
-      {error && <div style={{ color: 'red' }}>{error}</div>}
+      {error && <ErrorMessage>{error}</ErrorMessage>}
     </Container>
   );
 };
 
-// Add new styled components
+// Updating styled components for theme
 const ButtonContainer = styled.div`
   display: flex;
   gap: 1rem;
@@ -697,19 +701,32 @@ const ButtonContainer = styled.div`
 
 const VideoList = styled.div`
   margin-top: 2rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border-color);
   padding-top: 1rem;
+  
+  h3 {
+    color: var(--text-color);
+    transition: color 0.3s;
+  }
 `;
 
 const VideoItem = styled.div`
   margin: 1rem 0;
   padding: 1rem;
-  background-color: #f8f9fa;
+  background-color: var(--hover-color);
   border-radius: 8px;
+  transition: background-color 0.3s;
 `;
 
 const VideoTypeLabel = styled.div`
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #666;
+  color: var(--text-color);
+  transition: color 0.3s;
+`;
+
+const ErrorMessage = styled.div`
+  color: var(--error-color);
+  margin-top: 1rem;
+  transition: color 0.3s;
 `;
