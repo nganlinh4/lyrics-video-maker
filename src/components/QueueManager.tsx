@@ -72,6 +72,14 @@ const RemoveButton = styled.button`
   }
 `;
 
+const StopButton = styled(RemoveButton)`
+  color: var(--warning-color);
+  
+  &:hover {
+    background-color: var(--warning-background, rgba(255, 152, 0, 0.1));
+  }
+`;
+
 const DownloadButton = styled.a`
   display: inline-flex;
   align-items: center;
@@ -130,6 +138,12 @@ const TrashIcon = () => (
   </svg>
 );
 
+const StopIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+  </svg>
+);
+
 const DownloadIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -172,7 +186,7 @@ export interface QueueItemData {
 // We no longer need the props since we'll use the context
 const QueueManager: React.FC = () => {
   const { t } = useLanguage();
-  const { queue: queueItems, removeFromQueue, clearQueue: clearQueueContext } = useQueue();
+  const { queue: queueItems, removeFromQueue, clearQueue: clearQueueContext, cancelProcessing } = useQueue();
   
   // Convert queue items from QueueContext to match the QueueItemData format
   const queue = queueItems.map(item => ({
@@ -208,6 +222,10 @@ const QueueManager: React.FC = () => {
         removeFromQueue(item.id);
       }
     });
+  };
+  
+  const handleStopRendering = () => {
+    cancelProcessing();
   };
 
   const getBadgeVariant = (status: QueueItemStatus) => {
@@ -283,6 +301,14 @@ const QueueManager: React.FC = () => {
             )}
             
             <QueueItemActions>
+              {item.status === 'processing' && (
+                <Tooltip data-tooltip="Stop rendering">
+                  <StopButton onClick={handleStopRendering}>
+                    <StopIcon /> Stop Rendering
+                  </StopButton>
+                </Tooltip>
+              )}
+              
               {item.status !== 'processing' && (
                 <Tooltip data-tooltip="Remove from queue">
                   <RemoveButton onClick={() => removeQueueItem(item.id)}>

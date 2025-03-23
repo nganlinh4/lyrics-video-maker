@@ -16,8 +16,8 @@ const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number) => {
 
 const FormContainer = styled.div`
   max-width: 800px;
-  margin: 2rem auto;
-  padding: 2.5rem;
+  margin: 1.5rem auto;
+  padding: 1.5rem;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   background: var(--card-background);
@@ -25,18 +25,18 @@ const FormContainer = styled.div`
   transition: all 0.3s ease;
   
   @media (max-width: 768px) {
-    padding: 1.5rem;
-    margin: 1rem auto;
+    padding: 1rem;
+    margin: 0.5rem auto;
   }
 `;
 
 const Section = styled.div`
-  margin-bottom: 2.5rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid var(--border-color);
   
   h3 {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     font-weight: 600;
     color: var(--heading-color, var(--text-color));
   }
@@ -48,8 +48,8 @@ const FileInput = styled.input`
 
 const DropZone = styled.div<{ isDragging?: boolean }>`
   width: 100%;
-  padding: 2rem;
-  margin: 0.75rem 0 1.5rem;
+  padding: 1rem;
+  margin: 0.5rem 0 1rem;
   border: 2px dashed ${props => props.isDragging ? 'var(--accent-color)' : 'var(--border-color)'};
   border-radius: 8px;
   background-color: ${props => props.isDragging ? 'var(--hover-color)' : 'transparent'};
@@ -90,9 +90,9 @@ const DropZone = styled.div<{ isDragging?: boolean }>`
 const BulkDropZone = styled(DropZone)`
   background-color: rgba(110, 142, 251, 0.05);
   border: 3px dashed #6e8efb;
-  padding: 3.5rem 2rem;
-  margin-bottom: 2.5rem;
-  margin-top: 1.5rem;
+  padding: 2rem 1.5rem;
+  margin-bottom: 1.5rem;
+  margin-top: 1rem;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
   &:hover {
@@ -102,18 +102,18 @@ const BulkDropZone = styled(DropZone)`
   }
   
   .upload-icon {
-    font-size: 2.5rem;
+    font-size: 2rem;
     color: #6e8efb;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     opacity: 0.8;
   }
 `;
 
 const PreviewImage = styled.img`
-  max-width: 100px;
-  max-height: 100px;
-  margin-top: 1rem;
-  border-radius: 8px;
+  max-width: 70px;
+  max-height: 70px;
+  margin-top: 0.75rem;
+  border-radius: 6px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
   
@@ -125,14 +125,14 @@ const PreviewImage = styled.img`
 const Button = styled.button`
   background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-color-secondary) 100%);
   color: white;
-  padding: 0.85rem 1.75rem;
+  padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  margin-top: 1rem;
+  margin-top: 0.75rem;
   width: 100%;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   letter-spacing: 0.5px;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
@@ -173,8 +173,8 @@ const Button = styled.button`
 const InfoBox = styled.div`
   background-color: var(--info-background, rgba(25, 118, 210, 0.05));
   border-left: 4px solid var(--accent-color, #1976D2);
-  padding: 1.25rem;
-  margin: 1.25rem 0;
+  padding: 1rem;
+  margin: 1rem 0;
   border-radius: 8px;
   color: var(--text-color);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -185,7 +185,7 @@ const InfoBox = styled.div`
   }
   
   ul {
-    margin-top: 0.75rem;
+    margin-top: 0.5rem;
     padding-left: 1.25rem;
     
     li {
@@ -212,15 +212,19 @@ const CodeExample = styled.pre`
 const FileName = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  margin-top: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
   background-color: var(--hover-color, rgba(0, 0, 0, 0.05));
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
   color: var(--text-color);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
   
   &:hover {
     background-color: var(--hover-color-darker, rgba(0, 0, 0, 0.08));
@@ -236,10 +240,10 @@ const DropText = styled.p`
   margin: 0;
   text-align: center;
   color: var(--text-color);
-  font-size: 1rem;
+  font-size: 0.9rem;
   
   svg {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     margin-bottom: 0.5rem;
     color: var(--accent-color);
   }
@@ -264,9 +268,9 @@ const ErrorMessage = styled.div`
 `;
 
 const FileTypeTag = styled.span`
-  padding: 0.35rem 0.75rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 16px;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 600;
   margin-left: 0.5rem;
   background-color: var(--accent-background, rgba(25, 118, 210, 0.1));
@@ -277,9 +281,30 @@ const FileTypeTag = styled.span`
 
 const FormGrid = styled.div`
   display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const FormGridWide = styled.div`
+  display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const BackgroundGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -836,12 +861,6 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       
       <InfoBox>
         <strong>{t('quickUpload')}:</strong> {t('quickUploadDescription')}
-        <ul>
-          <li>{t('audioFilesByNames')}</li>
-          <li>{t('jsonForLyrics')}</li>
-          <li>{t('squareImages')}</li>
-          <li>{t('nonSquareImages')}</li>
-        </ul>
       </InfoBox>
 
       <BulkDropZone
@@ -857,197 +876,210 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
           {t('dragAndDropAll')}
         </DropText>
         {(mainAudioFile || instrumentalFile || vocalFile || littleVocalFile || lyricsFile || albumArtFile || Object.keys(backgroundFiles).length > 0) && (
-          <div style={{ marginTop: '1rem' }}>
+          <div style={{ marginTop: '0.75rem', width: '100%' }}>
             <h4>{t('detectedFiles')}</h4>
-            {mainAudioFile && <FileName>{t('mainAudio')}{mainAudioFile.name}<FileTypeTag>Main</FileTypeTag></FileName>}
-            {instrumentalFile && <FileName>{t('instrumental')}{instrumentalFile.name}<FileTypeTag>Music</FileTypeTag></FileName>}
-            {vocalFile && <FileName>{t('vocals')}{vocalFile.name}<FileTypeTag>Vocals</FileTypeTag></FileName>}
-            {littleVocalFile && <FileName>{t('littleVocal')}{littleVocalFile.name}<FileTypeTag>Little</FileTypeTag></FileName>}
-            {lyricsFile && <FileName>{t('lyrics')}{lyricsFile.name}<FileTypeTag>JSON</FileTypeTag></FileName>}
-            {albumArtFile && <FileName>{t('albumArt')}{albumArtFile.name}<FileTypeTag>Square</FileTypeTag></FileName>}
-            {Object.entries(backgroundFiles).map(([type, file]) => (
-              <FileName key={type}>{type} {t('background')}{file?.name}<FileTypeTag>Background</FileTypeTag></FileName>
-            ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.5rem' }}>
+              {mainAudioFile && <FileName>{mainAudioFile.name}<FileTypeTag>Main</FileTypeTag></FileName>}
+              {instrumentalFile && <FileName>{instrumentalFile.name}<FileTypeTag>Music</FileTypeTag></FileName>}
+              {vocalFile && <FileName>{vocalFile.name}<FileTypeTag>Vocals</FileTypeTag></FileName>}
+              {littleVocalFile && <FileName>{littleVocalFile.name}<FileTypeTag>Little</FileTypeTag></FileName>}
+              {lyricsFile && <FileName>{lyricsFile.name}<FileTypeTag>JSON</FileTypeTag></FileName>}
+              {albumArtFile && <FileName>{albumArtFile.name}<FileTypeTag>Square</FileTypeTag></FileName>}
+              {Object.entries(backgroundFiles).map(([type, file]) => (
+                <FileName key={type}>{file?.name}<FileTypeTag>BG</FileTypeTag></FileName>
+              ))}
+            </div>
           </div>
         )}
       </BulkDropZone>
 
-      <div>
-        <InputLabel>{t('artistName')}</InputLabel>
-        <Input
-          type="text"
-          name="artist"
-          value={artist}
-          onChange={handleMetadataChange}
-          placeholder={t('artistName')}
-        />
-      </div>
+      <FormGrid>
+        <div>
+          <InputLabel>{t('artistName')}</InputLabel>
+          <Input
+            type="text"
+            name="artist"
+            value={artist}
+            onChange={handleMetadataChange}
+            placeholder={t('artistName')}
+          />
+        </div>
 
-      <div>
-        <InputLabel>{t('songTitle')}</InputLabel>
-        <Input
-          type="text"
-          name="songTitle"
-          value={songTitle}
-          onChange={handleMetadataChange}
-          placeholder={t('songTitle')}
-        />
-      </div>
+        <div>
+          <InputLabel>{t('songTitle')}</InputLabel>
+          <Input
+            type="text"
+            name="songTitle"
+            value={songTitle}
+            onChange={handleMetadataChange}
+            placeholder={t('songTitle')}
+          />
+        </div>
 
-      <div>
-        <InputLabel>{t('videoType')}</InputLabel>
-        <Select
-          name="videoType"
-          value={videoType}
-          onChange={handleMetadataChange}
-        >
-          <option value="Lyrics Video">{t('lyricsVideo')}</option>
-          <option value="Vocal Only">{t('vocalOnly')}</option>
-          <option value="Instrumental Only">{t('instrumentalOnly')}</option>
-          <option value="Little Vocal">{t('littleVocalVideo')}</option>
-        </Select>
-      </div>
+        <div>
+          <InputLabel>{t('videoType')}</InputLabel>
+          <Select
+            name="videoType"
+            value={videoType}
+            onChange={handleMetadataChange}
+          >
+            <option value="Lyrics Video">{t('lyricsVideo')}</option>
+            <option value="Vocal Only">{t('vocalOnly')}</option>
+            <option value="Instrumental Only">{t('instrumentalOnly')}</option>
+            <option value="Little Vocal">{t('littleVocalVideo')}</option>
+          </Select>
+        </div>
+      </FormGrid>
 
-      <div>
-        <InputLabel>{t('mainAudioFile')}</InputLabel>
-        <DropZone
-          isDragging={isDragging['main']}
-          onDrop={(e) => handleDrop(e, 'main')}
-          onDragOver={handleDragOver}
-          onDragEnter={(e) => handleDragEnter(e, 'main')}
-          onDragLeave={(e) => handleDragLeave(e, 'main')}
-          onClick={() => mainAudioInputRef.current?.click()}
-        >
-          <DropText>{t('dragAndDropAudio')}</DropText>
-          <FileInput 
-            ref={mainAudioInputRef}
-            type="file" 
-            accept="audio/*" 
-            onChange={(e) => handleAudioChange(e, 'main')}
-          />
-          {mainAudioFile && (
-            <FileName>{t('mainAudio')}{mainAudioFile.name}</FileName>
-          )}
-        </DropZone>
-      </div>
+      <Section>
+        <h3>{t('audioFiles')}</h3>
+        <FormGridWide>
+          <div>
+            <InputLabel>{t('mainAudioFile')}</InputLabel>
+            <DropZone
+              isDragging={isDragging['main']}
+              onDrop={(e) => handleDrop(e, 'main')}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, 'main')}
+              onDragLeave={(e) => handleDragLeave(e, 'main')}
+              onClick={() => mainAudioInputRef.current?.click()}
+            >
+              <DropText>{t('dragAndDropAudio')}</DropText>
+              <FileInput 
+                ref={mainAudioInputRef}
+                type="file" 
+                accept="audio/*" 
+                onChange={(e) => handleAudioChange(e, 'main')}
+              />
+              {mainAudioFile && (
+                <FileName>{mainAudioFile.name}</FileName>
+              )}
+            </DropZone>
+          </div>
 
-      <div>
-        <InputLabel>{t('instrumentalAudio')}</InputLabel>
-        <DropZone
-          isDragging={isDragging['instrumental']}
-          onDrop={(e) => handleDrop(e, 'instrumental')}
-          onDragOver={handleDragOver}
-          onDragEnter={(e) => handleDragEnter(e, 'instrumental')}
-          onDragLeave={(e) => handleDragLeave(e, 'instrumental')}
-          onClick={() => instrumentalInputRef.current?.click()}
-        >
-          <DropText>{t('dragAndDropAudio')}</DropText>
-          <FileInput 
-            ref={instrumentalInputRef}
-            type="file" 
-            accept="audio/*" 
-            onChange={(e) => handleAudioChange(e, 'instrumental')}
-          />
-          {instrumentalFile && (
-            <FileName>{t('instrumental')}{instrumentalFile.name}</FileName>
-          )}
-        </DropZone>
-      </div>
+          <div>
+            <InputLabel>{t('lyricsFile')}</InputLabel>
+            <DropZone
+              isDragging={isDragging['lyrics']}
+              onDrop={(e) => handleDrop(e, 'lyrics')}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, 'lyrics')}
+              onDragLeave={(e) => handleDragLeave(e, 'lyrics')}
+              onClick={() => lyricsInputRef.current?.click()}
+            >
+              <DropText>{t('dragAndDropJson')}</DropText>
+              <FileInput 
+                ref={lyricsInputRef}
+                type="file" 
+                accept=".json" 
+                onChange={handleLyricsChange}
+              />
+              {lyricsFile && (
+                <FileName>{lyricsFile.name}</FileName>
+              )}
+            </DropZone>
+          </div>
+        </FormGridWide>
 
-      <div>
-        <InputLabel>{t('vocalAudio')}</InputLabel>
-        <DropZone
-          isDragging={isDragging['vocal']}
-          onDrop={(e) => handleDrop(e, 'vocal')}
-          onDragOver={handleDragOver}
-          onDragEnter={(e) => handleDragEnter(e, 'vocal')}
-          onDragLeave={(e) => handleDragLeave(e, 'vocal')}
-          onClick={() => vocalInputRef.current?.click()}
-        >
-          <DropText>{t('dragAndDropAudio')}</DropText>
-          <FileInput 
-            ref={vocalInputRef}
-            type="file" 
-            accept="audio/*" 
-            onChange={(e) => handleAudioChange(e, 'vocal')}
-          />
-          {vocalFile && (
-            <FileName>{t('vocals')}{vocalFile.name}</FileName>
-          )}
-        </DropZone>
-      </div>
-      
-      <div>
-        <InputLabel>{t('littleVocalAudio')}</InputLabel>
-        <DropZone
-          isDragging={isDragging['littleVocal']}
-          onDrop={(e) => handleDrop(e, 'littleVocal')}
-          onDragOver={handleDragOver}
-          onDragEnter={(e) => handleDragEnter(e, 'littleVocal')}
-          onDragLeave={(e) => handleDragLeave(e, 'littleVocal')}
-          onClick={() => littleVocalInputRef.current?.click()}
-        >
-          <DropText>{t('dragAndDropAudio')}</DropText>
-          <FileInput 
-            ref={littleVocalInputRef}
-            type="file" 
-            accept="audio/*" 
-            onChange={(e) => handleAudioChange(e, 'littleVocal')}
-          />
-          {littleVocalFile && (
-            <FileName>{t('littleVocal')}{littleVocalFile.name}</FileName>
-          )}
-        </DropZone>
-      </div>
-      
-      <div>
-        <InputLabel>{t('lyricsFile')}</InputLabel>
-        <DropZone
-          isDragging={isDragging['lyrics']}
-          onDrop={(e) => handleDrop(e, 'lyrics')}
-          onDragOver={handleDragOver}
-          onDragEnter={(e) => handleDragEnter(e, 'lyrics')}
-          onDragLeave={(e) => handleDragLeave(e, 'lyrics')}
-          onClick={() => lyricsInputRef.current?.click()}
-        >
-          <DropText>{t('dragAndDropJson')}</DropText>
-          <FileInput 
-            ref={lyricsInputRef}
-            type="file" 
-            accept=".json" 
-            onChange={handleLyricsChange}
-          />
-          {lyricsFile && (
-            <FileName>{t('lyrics')}{lyricsFile.name}</FileName>
-          )}
-        </DropZone>
-      </div>
-      
-      <div>
-        <InputLabel>{t('albumArtOptional')}</InputLabel>
-        <DropZone
-          isDragging={isDragging['albumArt']}
-          onDrop={(e) => handleDrop(e, 'albumArt')}
-          onDragOver={handleDragOver}
-          onDragEnter={(e) => handleDragEnter(e, 'albumArt')}
-          onDragLeave={(e) => handleDragLeave(e, 'albumArt')}
-          onClick={() => albumArtInputRef.current?.click()}
-        >
-          <DropText>{t('dragAndDropImage')}</DropText>
-          <FileInput 
-            ref={albumArtInputRef}
-            type="file" 
-            accept="image/*" 
-            onChange={(e) => handleImageChange(e, 'albumArt')}
-          />
-          {albumArtFile && (
-            <>
-              <PreviewImage src={URL.createObjectURL(albumArtFile)} alt="Album Art Preview" />
-              <FileName>{t('albumArt')}{albumArtFile.name}</FileName>
-            </>
-          )}
-        </DropZone>
-      </div>
+        <FormGridWide>
+          <div>
+            <InputLabel>{t('instrumentalAudio')}</InputLabel>
+            <DropZone
+              isDragging={isDragging['instrumental']}
+              onDrop={(e) => handleDrop(e, 'instrumental')}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, 'instrumental')}
+              onDragLeave={(e) => handleDragLeave(e, 'instrumental')}
+              onClick={() => instrumentalInputRef.current?.click()}
+            >
+              <DropText>{t('dragAndDropAudio')}</DropText>
+              <FileInput 
+                ref={instrumentalInputRef}
+                type="file" 
+                accept="audio/*" 
+                onChange={(e) => handleAudioChange(e, 'instrumental')}
+              />
+              {instrumentalFile && (
+                <FileName>{instrumentalFile.name}</FileName>
+              )}
+            </DropZone>
+          </div>
+
+          <div>
+            <InputLabel>{t('vocalAudio')}</InputLabel>
+            <DropZone
+              isDragging={isDragging['vocal']}
+              onDrop={(e) => handleDrop(e, 'vocal')}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, 'vocal')}
+              onDragLeave={(e) => handleDragLeave(e, 'vocal')}
+              onClick={() => vocalInputRef.current?.click()}
+            >
+              <DropText>{t('dragAndDropAudio')}</DropText>
+              <FileInput 
+                ref={vocalInputRef}
+                type="file" 
+                accept="audio/*" 
+                onChange={(e) => handleAudioChange(e, 'vocal')}
+              />
+              {vocalFile && (
+                <FileName>{vocalFile.name}</FileName>
+              )}
+            </DropZone>
+          </div>
+        </FormGridWide>
+
+        <FormGridWide>
+          <div>
+            <InputLabel>{t('littleVocalAudio')}</InputLabel>
+            <DropZone
+              isDragging={isDragging['littleVocal']}
+              onDrop={(e) => handleDrop(e, 'littleVocal')}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, 'littleVocal')}
+              onDragLeave={(e) => handleDragLeave(e, 'littleVocal')}
+              onClick={() => littleVocalInputRef.current?.click()}
+            >
+              <DropText>{t('dragAndDropAudio')}</DropText>
+              <FileInput 
+                ref={littleVocalInputRef}
+                type="file" 
+                accept="audio/*" 
+                onChange={(e) => handleAudioChange(e, 'littleVocal')}
+              />
+              {littleVocalFile && (
+                <FileName>{littleVocalFile.name}</FileName>
+              )}
+            </DropZone>
+          </div>
+
+          <div>
+            <InputLabel>{t('albumArtOptional')}</InputLabel>
+            <DropZone
+              isDragging={isDragging['albumArt']}
+              onDrop={(e) => handleDrop(e, 'albumArt')}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, 'albumArt')}
+              onDragLeave={(e) => handleDragLeave(e, 'albumArt')}
+              onClick={() => albumArtInputRef.current?.click()}
+            >
+              <DropText>{t('dragAndDropImage')}</DropText>
+              <FileInput 
+                ref={albumArtInputRef}
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => handleImageChange(e, 'albumArt')}
+              />
+              {albumArtFile && (
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <PreviewImage src={URL.createObjectURL(albumArtFile)} alt="Album Art Preview" />
+                  <FileName style={{ marginLeft: '0.5rem' }}>{albumArtFile.name}</FileName>
+                </div>
+              )}
+            </DropZone>
+          </div>
+        </FormGridWide>
+      </Section>
 
       <Section>
         <h3>{t('backgroundImages')}</h3>
@@ -1055,51 +1087,53 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
           <strong>{t('backgroundNote')}</strong>
         </InfoBox>
 
-        {['Lyrics Video', 'Vocal Only', 'Instrumental Only', 'Little Vocal'].map((type) => (
-          <div key={type}>
-            <InputLabel>{t('backgroundForType')} {t(type.toLowerCase().replace(' ', ''))}</InputLabel>
-            <DropZone
-              isDragging={isDragging[`background${type.replace(' ', '')}`]}
-              onDrop={(e) => handleDrop(e, 'background', type as VideoMetadata['videoType'])}
-              onDragOver={handleDragOver}
-              onDragEnter={(e) => handleDragEnter(e, `background${type.replace(' ', '')}`)}
-              onDragLeave={(e) => handleDragLeave(e, `background${type.replace(' ', '')}`)}
-              onClick={() => {
-                const ref = {
-                  'Lyrics Video': backgroundLyricsInputRef,
-                  'Vocal Only': backgroundVocalInputRef,
-                  'Instrumental Only': backgroundInstrumentalInputRef,
-                  'Little Vocal': backgroundLittleVocalInputRef
-                }[type]!;  // Add non-null assertion here
-                ref.current?.click();
-              }}
-            >
-              <DropText>{t('dragAndDropImage')}</DropText>
-              <FileInput 
-                ref={{
-                  'Lyrics Video': backgroundLyricsInputRef,
-                  'Vocal Only': backgroundVocalInputRef,
-                  'Instrumental Only': backgroundInstrumentalInputRef,
-                  'Little Vocal': backgroundLittleVocalInputRef
-                }[type]}
-                type="file" 
-                accept="image/*" 
-                onChange={(e) => handleImageChange(e, 'background', type as VideoMetadata['videoType'])}
-              />
-              {backgroundFiles[type as VideoMetadata['videoType']] && (
-                <>
-                  <PreviewImage 
-                    src={URL.createObjectURL(backgroundFiles[type as VideoMetadata['videoType']]!)} 
-                    alt={`${type} Background`} 
-                  />
-                  <FileName>
-                    {t('background')}{backgroundFiles[type as VideoMetadata['videoType']]?.name}
-                  </FileName>
-                </>
-              )}
-            </DropZone>
-          </div>
-        ))}
+        <BackgroundGrid>
+          {['Lyrics Video', 'Vocal Only', 'Instrumental Only', 'Little Vocal'].map((type) => (
+            <div key={type}>
+              <InputLabel>{t(type.toLowerCase().replace(' ', ''))}</InputLabel>
+              <DropZone
+                isDragging={isDragging[`background${type.replace(' ', '')}`]}
+                onDrop={(e) => handleDrop(e, 'background', type as VideoMetadata['videoType'])}
+                onDragOver={handleDragOver}
+                onDragEnter={(e) => handleDragEnter(e, `background${type.replace(' ', '')}`)}
+                onDragLeave={(e) => handleDragLeave(e, `background${type.replace(' ', '')}`)}
+                onClick={() => {
+                  const ref = {
+                    'Lyrics Video': backgroundLyricsInputRef,
+                    'Vocal Only': backgroundVocalInputRef,
+                    'Instrumental Only': backgroundInstrumentalInputRef,
+                    'Little Vocal': backgroundLittleVocalInputRef
+                  }[type]!;
+                  ref.current?.click();
+                }}
+              >
+                <DropText>{t('dragAndDropImage')}</DropText>
+                <FileInput 
+                  ref={{
+                    'Lyrics Video': backgroundLyricsInputRef,
+                    'Vocal Only': backgroundVocalInputRef,
+                    'Instrumental Only': backgroundInstrumentalInputRef,
+                    'Little Vocal': backgroundLittleVocalInputRef
+                  }[type]}
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => handleImageChange(e, 'background', type as VideoMetadata['videoType'])}
+                />
+                {backgroundFiles[type as VideoMetadata['videoType']] && (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <PreviewImage 
+                      src={URL.createObjectURL(backgroundFiles[type as VideoMetadata['videoType']]!)} 
+                      alt={`${type} Background`} 
+                    />
+                    <FileName style={{ marginLeft: '0.5rem' }}>
+                      {backgroundFiles[type as VideoMetadata['videoType']]?.name}
+                    </FileName>
+                  </div>
+                )}
+              </DropZone>
+            </div>
+          ))}
+        </BackgroundGrid>
       </Section>
 
       <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
