@@ -17,18 +17,29 @@ const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number) => {
 const FormContainer = styled.div`
   max-width: 800px;
   margin: 2rem auto;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px var(--shadow-color);
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   background: var(--card-background);
   color: var(--text-color);
-  transition: background-color 0.3s, color 0.3s;
+  transition: all 0.3s ease;
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    margin: 1rem auto;
+  }
 `;
 
 const Section = styled.div`
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
   border-bottom: 1px solid var(--border-color);
+  
+  h3 {
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: var(--heading-color, var(--text-color));
+  }
 `;
 
 const FileInput = styled.input`
@@ -38,9 +49,9 @@ const FileInput = styled.input`
 const DropZone = styled.div<{ isDragging?: boolean }>`
   width: 100%;
   padding: 2rem;
-  margin: 0.5rem 0;
+  margin: 0.75rem 0 1.5rem;
   border: 2px dashed ${props => props.isDragging ? 'var(--accent-color)' : 'var(--border-color)'};
-  border-radius: 4px;
+  border-radius: 8px;
   background-color: ${props => props.isDragging ? 'var(--hover-color)' : 'transparent'};
   color: var(--text-color);
   display: flex;
@@ -49,21 +60,52 @@ const DropZone = styled.div<{ isDragging?: boolean }>`
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 
   &:hover {
     border-color: var(--accent-color);
     background-color: var(--hover-color);
+    transform: translateY(-2px);
+  }
+  
+  &:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: ${props => props.isDragging ? 'rgba(var(--accent-color-rgb), 0.05)' : 'transparent'};
+    z-index: 0;
+    transition: all 0.3s ease;
+  }
+  
+  > * {
+    position: relative;
+    z-index: 1;
   }
 `;
 
 const BulkDropZone = styled(DropZone)`
-  background-color: var(--background-color);
+  background-color: rgba(110, 142, 251, 0.05);
   border: 3px dashed #6e8efb;
-  padding: 3rem;
-  margin-bottom: 2rem;
+  padding: 3.5rem 2rem;
+  margin-bottom: 2.5rem;
+  margin-top: 1.5rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
   &:hover {
-    background-color: rgba(110, 142, 251, 0.15);
+    background-color: rgba(110, 142, 251, 0.1);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(110, 142, 251, 0.15);
+  }
+  
+  .upload-icon {
+    font-size: 2.5rem;
+    color: #6e8efb;
+    margin-bottom: 1rem;
+    opacity: 0.8;
   }
 `;
 
@@ -71,25 +113,53 @@ const PreviewImage = styled.img`
   max-width: 100px;
   max-height: 100px;
   margin-top: 1rem;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
 `;
 
 const Button = styled.button`
   background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-color-secondary) 100%);
   color: white;
-  padding: 0.75rem 1.5rem;
+  padding: 0.85rem 1.75rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   margin-top: 1rem;
   width: 100%;
-  font-weight: bold;
-  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: all 0.6s ease;
+  }
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px var(--shadow-color);
+    transform: translateY(-3px);
+    box-shadow: 0 7px 14px rgba(0, 0, 0, 0.18);
+    
+    &:before {
+      left: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(-1px);
   }
 
   &:disabled {
@@ -101,58 +171,139 @@ const Button = styled.button`
 `;
 
 const InfoBox = styled.div`
-  background-color: var(--info-background);
-  border-left: 4px solid var(--accent-color);
-  padding: 1rem;
-  margin: 1rem 0;
-  border-radius: 4px;
+  background-color: var(--info-background, rgba(25, 118, 210, 0.05));
+  border-left: 4px solid var(--accent-color, #1976D2);
+  padding: 1.25rem;
+  margin: 1.25rem 0;
+  border-radius: 8px;
   color: var(--text-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  ul {
+    margin-top: 0.75rem;
+    padding-left: 1.25rem;
+    
+    li {
+      margin-bottom: 0.5rem;
+    }
+  }
+  
+  strong {
+    color: var(--accent-color, #1976D2);
+  }
 `;
 
 const CodeExample = styled.pre`
-  background-color: var(--code-background);
-  padding: 1rem;
-  border-radius: 4px;
+  background-color: var(--code-background, #2d2d2d);
+  padding: 1.25rem;
+  border-radius: 8px;
   overflow-x: auto;
   font-size: 0.9rem;
-  margin: 0.5rem 0;
-  color: var(--code-text-color);
+  margin: 0.75rem 0;
+  color: var(--code-text-color, #f8f8f2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 `;
 
 const FileName = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  margin-top: 0.5rem;
-  background-color: var(--hover-color);
-  border-radius: 4px;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  background-color: var(--hover-color, rgba(0, 0, 0, 0.05));
+  border-radius: 8px;
   font-size: 0.9rem;
   color: var(--text-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: var(--hover-color-darker, rgba(0, 0, 0, 0.08));
+  }
+  
+  svg {
+    color: var(--accent-color);
+    font-size: 1.1rem;
+  }
 `;
 
 const DropText = styled.p`
   margin: 0;
   text-align: center;
   color: var(--text-color);
+  font-size: 1rem;
+  
+  svg {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent-color);
+  }
 `;
 
 const ErrorMessage = styled.div`
-  color: var(--error-color);
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background-color: var(--error-background);
-  border-radius: 4px;
-  border-left: 4px solid var(--error-color);
+  color: var(--error-color, #f44336);
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background-color: var(--error-background, rgba(244, 67, 54, 0.08));
+  border-radius: 8px;
+  border-left: 4px solid var(--error-color, #f44336);
+  font-size: 0.95rem;
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  
+  @keyframes shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-3px); }
+    40%, 60% { transform: translateX(3px); }
+  }
 `;
 
 const FileTypeTag = styled.span`
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
   margin-left: 0.5rem;
-  background-color: var(--accent-background);
-  color: var(--accent-text-color);
+  background-color: var(--accent-background, rgba(25, 118, 210, 0.1));
+  color: var(--accent-text-color, #1976D2);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+`;
+
+const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const FormTitle = styled.h2`
+  font-size: 1.8rem;
+  color: var(--heading-color, var(--text-color));
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent-color);
+  padding-bottom: 0.75rem;
+  display: inline-block;
+`;
+
+const AnimatedIcon = styled.div`
+  svg {
+    transition: all 0.3s ease;
+  }
+  
+  &:hover svg {
+    transform: scale(1.2);
+  }
 `;
 
 interface AudioFiles {

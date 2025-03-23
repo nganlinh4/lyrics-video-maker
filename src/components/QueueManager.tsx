@@ -1,258 +1,309 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useQueue, QueueItem } from '../contexts/QueueContext';
+import { Card, Badge, Button, Flex, ProgressBar, Tooltip } from './StyledComponents';
 import { useLanguage } from '../contexts/LanguageContext';
-import VideoPreview from './VideoPreview';
-
-const QueueManager: React.FC = () => {
-  const { queue, removeFromQueue, clearQueue, isProcessing, currentProcessingItem } = useQueue();
-  const { t } = useLanguage();
-
-  if (queue.length === 0) {
-    return null;
-  }
-
-  const pendingItems = queue.filter(item => item.status === 'pending');
-  const processingItems = queue.filter(item => item.status === 'processing');
-  const completedItems = queue.filter(item => item.status === 'complete');
-  const errorItems = queue.filter(item => item.status === 'error');
-
-  return (
-    <QueueContainer>
-      <QueueHeader>
-        <h3>{t('renderQueue')}</h3>
-        <QueueActions>
-          <QueueButton 
-            onClick={clearQueue}
-            disabled={isProcessing}
-            title={isProcessing ? "Can't clear queue while rendering" : "Clear all items from queue"}
-          >
-            {t('clearQueue')}
-          </QueueButton>
-        </QueueActions>
-      </QueueHeader>
-
-      <QueueStats>
-        <QueueStat>{t('pending')}: {pendingItems.length}</QueueStat>
-        <QueueStat>{t('processing')}: {processingItems.length}</QueueStat>
-        <QueueStat>{t('completed')}: {completedItems.length}</QueueStat>
-        <QueueStat>{t('failed')}: {errorItems.length}</QueueStat>
-      </QueueStats>
-
-      <QueueList>
-        {queue.map(item => (
-          <QueueItemContainer key={item.id}>
-            <QueueItemHeader>
-              <QueueItemTitle>
-                {item.metadata.artist} - {item.metadata.songTitle}
-              </QueueItemTitle>
-              <QueueItemStatus status={item.status}>
-                {item.status === 'pending' && t('pending')}
-                {item.status === 'processing' && `${t('processing')} (${Math.round(item.progress * 100)}%)`}
-                {item.status === 'complete' && t('complete')}
-                {item.status === 'error' && t('failed')}
-              </QueueItemStatus>
-            </QueueItemHeader>
-
-            {item.status === 'processing' && (
-              <ProgressContainer>
-                <ProgressBar width={item.progress * 100} />
-              </ProgressContainer>
-            )}
-
-            {item.status === 'complete' && item.result && (
-              <ResultsContainer>
-                {Object.entries(item.result).map(([videoType, url]) => (
-                  <ResultItem key={videoType}>
-                    <ResultLabel>{videoType}</ResultLabel>
-                    <VideoPreview videoUrl={url} />
-                  </ResultItem>
-                ))}
-              </ResultsContainer>
-            )}
-
-            {item.status === 'error' && (
-              <ErrorMessage>{item.error || 'An unknown error occurred'}</ErrorMessage>
-            )}
-
-            <QueueItemActions>
-              {item.status !== 'processing' && (
-                <QueueButton 
-                  onClick={() => removeFromQueue(item.id)} 
-                  disabled={isProcessing && currentProcessingItem === item.id}
-                >
-                  {t('remove')}
-                </QueueButton>
-              )}
-            </QueueItemActions>
-          </QueueItemContainer>
-        ))}
-      </QueueList>
-    </QueueContainer>
-  );
-};
+import { useQueue } from '../contexts/QueueContext'; // Add this import
 
 const QueueContainer = styled.div`
-  margin: 20px 0;
-  padding: 20px;
-  background-color: var(--card-background);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px var(--shadow-color);
-  transition: background-color 0.3s, box-shadow 0.3s;
-  
-  h3 {
-    color: var(--text-color);
-    transition: color 0.3s;
-  }
+  width: 100%;
 `;
 
-const QueueHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  
-  h3 {
-    margin: 0;
-  }
-`;
-
-const QueueActions = styled.div`
-  display: flex;
-  gap: 10px;
-`;
-
-const QueueButton = styled.button`
-  background: linear-gradient(135deg, var(--accent-color) 0%, #a777e3 100%);
-  color: white;
-  padding: 8px 15px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
+const QueueItem = styled(Card)`
+  margin-bottom: 1rem;
+  padding: 1.25rem;
+  background: var(--card-background);
   transition: all 0.3s ease;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   }
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-  }
-`;
-
-const QueueStats = styled.div`
-  display: flex;
-  gap: 15px;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
-`;
-
-const QueueStat = styled.div`
-  padding: 5px 10px;
-  background-color: var(--hover-color);
-  border-radius: 20px;
-  font-size: 0.85rem;
-  color: var(--text-color);
-  transition: background-color 0.3s, color 0.3s;
-`;
-
-const QueueList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-`;
-
-const QueueItemContainer = styled.div`
-  padding: 15px;
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px var(--shadow-color);
-  transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
 `;
 
 const QueueItemHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 0.75rem;
 `;
 
 const QueueItemTitle = styled.div`
   font-weight: 600;
-  font-size: 1.1rem;
-  color: var(--text-color);
-  transition: color 0.3s;
+  color: var(--heading-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  small {
+    opacity: 0.7;
+    font-weight: normal;
+  }
 `;
 
-const QueueItemStatus = styled.div<{ status: QueueItem['status'] }>`
-  padding: 4px 10px;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  
-  ${({ status }) => {
-    if (status === 'pending') return 'background-color: var(--hover-color); color: var(--text-color);';
-    if (status === 'processing') return 'background-color: #cff4fc; color: #055160;';
-    if (status === 'complete') return 'background-color: #d1e7dd; color: #0f5132;';
-    if (status === 'error') return 'background-color: #f8d7da; color: #842029;';
-    return '';
-  }}
-  
-  transition: background-color 0.3s, color 0.3s;
+const QueueItemProgressWrapper = styled.div`
+  margin: 0.75rem 0;
 `;
 
 const QueueItemActions = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 `;
 
-const ProgressContainer = styled.div`
-  width: 100%;
-  height: 15px;
-  background-color: var(--hover-color);
-  border-radius: 8px;
-  margin: 10px 0;
-  overflow: hidden;
-  transition: background-color 0.3s;
-`;
-
-const ProgressBar = styled.div<{ width: number }>`
-  width: ${props => props.width}%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--accent-color) 0%, #a777e3 100%);
-  transition: width 0.3s ease;
-`;
-
-const ResultsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 10px;
-`;
-
-const ResultItem = styled.div`
-  margin-bottom: 10px;
-`;
-
-const ResultLabel = styled.div`
-  font-weight: 500;
-  margin-bottom: 5px;
-  color: var(--text-color);
-  transition: color 0.3s;
-`;
-
-const ErrorMessage = styled.div`
-  margin: 10px 0;
-  padding: 10px;
-  background-color: #f8d7da;
+const RemoveButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--error-color);
+  cursor: pointer;
+  padding: 0.5rem;
   border-radius: 4px;
-  color: #842029;
+  display: flex;
+  align-items: center;
   font-size: 0.9rem;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: var(--error-background);
+  }
+  
+  svg {
+    margin-right: 0.25rem;
+  }
 `;
+
+const DownloadButton = styled.a`
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, var(--success-color), #2e7d32);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  svg {
+    margin-right: 0.5rem;
+  }
+`;
+
+const EmptyQueue = styled.div`
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-color);
+  opacity: 0.7;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  
+  svg {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--border-color);
+  }
+  
+  p {
+    margin: 0.5rem 0;
+  }
+`;
+
+const ClearQueueButton = styled(Button)`
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  
+  &:hover {
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+  }
+`;
+
+// Icon components
+const TrashIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"></polyline>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+  </svg>
+);
+
+const DownloadIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+    <polyline points="7 10 12 15 17 10"></polyline>
+    <line x1="12" y1="15" x2="12" y2="3"></line>
+  </svg>
+);
+
+const QueueEmptyIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+    <path d="M6 8h.01"></path>
+    <path d="M10 8h.01"></path>
+    <path d="M14 8h.01"></path>
+    <path d="M18 8h.01"></path>
+    <path d="M6 12h.01"></path>
+    <path d="M10 12h.01"></path>
+    <path d="M14 12h.01"></path>
+    <path d="M18 12h.01"></path>
+    <path d="M6 16h.01"></path>
+    <path d="M10 16h.01"></path>
+    <path d="M14 16h.01"></path>
+    <path d="M18 16h.01"></path>
+  </svg>
+);
+
+export type QueueItemStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+export interface QueueItemData {
+  id: string;
+  status: QueueItemStatus;
+  progress: number;
+  artist: string;
+  songTitle: string;
+  videoType: string;
+  outputPath?: string;
+  errorMessage?: string;
+}
+
+// We no longer need the props since we'll use the context
+const QueueManager: React.FC = () => {
+  const { t } = useLanguage();
+  const { queue: queueItems, removeFromQueue, clearQueue: clearQueueContext } = useQueue();
+  
+  // Convert queue items from QueueContext to match the QueueItemData format
+  const queue = queueItems.map(item => ({
+    id: item.id,
+    status: mapStatus(item.status),
+    progress: item.progress,
+    artist: item.metadata.artist,
+    songTitle: item.metadata.songTitle,
+    videoType: item.metadata.videoType,
+    outputPath: item.result?.[item.metadata.videoType],
+    errorMessage: item.error
+  }));
+  
+  // Helper function to map status values between interfaces
+  function mapStatus(status: 'pending' | 'processing' | 'complete' | 'error'): QueueItemStatus {
+    switch(status) {
+      case 'pending': return 'pending';
+      case 'processing': return 'processing';
+      case 'complete': return 'completed';
+      case 'error': return 'failed';
+      default: return 'pending';
+    }
+  }
+  
+  const removeQueueItem = (id: string) => {
+    removeFromQueue(id);
+  };
+  
+  const clearQueue = () => {
+    // Only remove non-processing items (we can implement this using the context)
+    queueItems.forEach(item => {
+      if (item.status !== 'processing') {
+        removeFromQueue(item.id);
+      }
+    });
+  };
+
+  const getBadgeVariant = (status: QueueItemStatus) => {
+    switch(status) {
+      case 'pending': return 'info';
+      case 'processing': return 'warning';
+      case 'completed': return 'success';
+      case 'failed': return 'error';
+      default: return 'default';
+    }
+  };
+  
+  const getStatusColor = (status: QueueItemStatus) => {
+    switch(status) {
+      case 'pending': return 'var(--accent-color)';
+      case 'processing': return 'var(--warning-color)';
+      case 'completed': return 'var(--success-color)';
+      case 'failed': return 'var(--error-color)';
+      default: return 'var(--accent-color)';
+    }
+  };
+
+  return (
+    <QueueContainer>
+      {queue.length > 0 && (
+        <Flex justify="space-between" align="center" style={{ marginBottom: '1rem' }}>
+          <h3 style={{ margin: 0 }}>{t('renderQueue')} ({queue.length})</h3>
+          <ClearQueueButton onClick={clearQueue}>
+            <TrashIcon /> {t('clearQueue')}
+          </ClearQueueButton>
+        </Flex>
+      )}
+      
+      {queue.length === 0 ? (
+        <EmptyQueue>
+          <QueueEmptyIcon />
+          <p>{t('noVideo')}</p>
+          <p>Add videos to the queue to start rendering</p>
+        </EmptyQueue>
+      ) : (
+        queue.map(item => (
+          <QueueItem key={item.id}>
+            <QueueItemHeader>
+              <QueueItemTitle>
+                {item.artist} - {item.songTitle}
+                <small>({item.videoType})</small>
+              </QueueItemTitle>
+              <Badge variant={getBadgeVariant(item.status)}>
+                {t(item.status)}
+              </Badge>
+            </QueueItemHeader>
+            
+            {(item.status === 'processing' || item.status === 'pending') && (
+              <QueueItemProgressWrapper>
+                <ProgressBar progress={item.progress} color={getStatusColor(item.status)} />
+                <div style={{ textAlign: 'right', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                  {item.progress}%
+                </div>
+              </QueueItemProgressWrapper>
+            )}
+            
+            {item.errorMessage && (
+              <div style={{ 
+                backgroundColor: 'var(--error-background)', 
+                color: 'var(--error-color)',
+                padding: '0.75rem',
+                borderRadius: '4px',
+                marginTop: '0.75rem',
+                fontSize: '0.9rem'
+              }}>
+                Error: {item.errorMessage}
+              </div>
+            )}
+            
+            <QueueItemActions>
+              {item.status !== 'processing' && (
+                <Tooltip data-tooltip="Remove from queue">
+                  <RemoveButton onClick={() => removeQueueItem(item.id)}>
+                    <TrashIcon /> {t('remove')}
+                  </RemoveButton>
+                </Tooltip>
+              )}
+              
+              {item.status === 'completed' && item.outputPath && (
+                <Tooltip data-tooltip="Download rendered video">
+                  <DownloadButton href={item.outputPath} download>
+                    <DownloadIcon /> Download
+                  </DownloadButton>
+                </Tooltip>
+              )}
+            </QueueItemActions>
+          </QueueItem>
+        ))
+      )}
+    </QueueContainer>
+  );
+};
 
 export default QueueManager;

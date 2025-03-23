@@ -49,6 +49,16 @@ export const translations: Translations = {
     ko: '한국어'
   },
   
+  // Add the missing translation keys
+  note: {
+    en: 'Note',
+    ko: '참고'
+  },
+  videosRenderedNote: {
+    en: 'Videos will be rendered in the order they are added to the queue. You can continue working while rendering happens in the background.',
+    ko: '비디오는 대기열에 추가된 순서대로 렌더링됩니다. 렌더링이 백그라운드에서 진행되는 동안 계속 작업할 수 있습니다.'
+  },
+  
   // Upload Form
   uploadFiles: {
     en: 'Upload Files',
@@ -143,6 +153,23 @@ export const translations: Translations = {
     ko: '반주만'
   },
   littleVocalVideo: {
+    en: 'Little Vocal',
+    ko: '작은 보컬'
+  },
+  // Add the missing keys that caused the errors
+  lyricsvideo: {
+    en: 'Lyrics Video',
+    ko: '가사 비디오'
+  },
+  vocalonly: {
+    en: 'Vocal Only',
+    ko: '보컬만'
+  },
+  instrumentalonly: {
+    en: 'Instrumental Only',
+    ko: '반주만'
+  },
+  littlevocal: {
     en: 'Little Vocal',
     ko: '작은 보컬'
   },
@@ -259,6 +286,27 @@ export const translations: Translations = {
   noVideo: {
     en: 'No video to preview.',
     ko: '미리볼 비디오가 없습니다.'
+  },
+  // VideoPreview translations
+  videoDetails: {
+    en: 'Video Details',
+    ko: '비디오 세부정보'
+  },
+  files: {
+    en: 'Files',
+    ko: '파일'
+  },
+  previewDesc: {
+    en: 'Preview will appear here after rendering',
+    ko: '렌더링 후 미리보기가 여기에 표시됩니다'
+  },
+  uploadAudioFirst: {
+    en: 'Please upload an audio file first',
+    ko: '오디오 파일을 먼저 업로드하세요'
+  },
+  enterArtistAndTitle: {
+    en: 'Please enter artist name and song title',
+    ko: '아티스트 이름과 노래 제목을 입력하세요'
   },
   
   // Workspace
