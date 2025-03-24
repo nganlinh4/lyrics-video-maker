@@ -5,6 +5,9 @@ import VideoPreview from './VideoPreview';
 import { Input, Select, InputLabel } from './StyledComponents';
 import { analyzeAudio } from '../utils/audioAnalyzer';
 import { useLanguage } from '../contexts/LanguageContext';
+import { BsMusicNoteBeamed, BsFileEarmarkText } from 'react-icons/bs';
+import { MdOutlineLibraryMusic } from 'react-icons/md';
+import { HiOutlineMicrophone } from 'react-icons/hi';
 
 const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -45,6 +48,172 @@ const FileInput = styled.input`
   display: none;
 `;
 
+// Base components first
+const FilePreviewContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.35rem;
+  background-color: var(--hover-color, rgba(0, 0, 0, 0.05));
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+`;
+
+const FileName = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--text-color);
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+
+  span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1;
+    padding: 0.15rem 0.4rem;
+    background: var(--hover-color, rgba(0, 0, 0, 0.05));
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+`;
+
+// Add compact file preview container for the bulk drop section
+const CompactFilePreview = styled(FilePreviewContainer)`
+  margin: 0;
+  padding: 0.25rem 0.35rem;
+  background-color: var(--card-background, #ffffff);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  gap: 0.35rem;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  ${FileName} {
+    font-size: 0.8rem;
+  }
+`;
+
+const CompactFileGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.75rem;
+`;
+
+const FileIcon = styled.div<{ type: string }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background-color: ${props => {
+    switch (props.type) {
+      case 'Main':
+        return 'rgba(25, 118, 210, 0.1)';
+      case 'Music':
+        return 'rgba(76, 175, 80, 0.1)';
+      case 'Vocals':
+        return 'rgba(233, 30, 99, 0.1)';
+      case 'Little':
+        return 'rgba(156, 39, 176, 0.1)';
+      case 'JSON':
+        return 'rgba(255, 152, 0, 0.1)';
+      default:
+        return 'rgba(158, 158, 158, 0.1)';
+    }
+  }};
+  color: ${props => {
+    switch (props.type) {
+      case 'Main':
+        return '#1976D2';
+      case 'Music':
+        return '#4CAF50';
+      case 'Vocals':
+        return '#E91E63';
+      case 'Little':
+        return '#9C27B0';
+      case 'JSON':
+        return '#FF9800';
+      default:
+        return '#9E9E9E';
+    }
+  }};
+  font-size: 1rem;
+`;
+
+// First declare FileTypeTag
+const FileTypeTag = styled.span`
+  padding: 0.15rem 0.35rem;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background-color: var(--accent-background, rgba(25, 118, 210, 0.1));
+  color: var(--accent-text-color, #1976D2);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+`;
+
+// Then CompactFileTag that extends it
+const CompactFileTag = styled(FileTypeTag)`
+  padding: 0.1rem 0.3rem;
+  font-size: 0.55rem;
+  border-radius: 10px;
+  background-color: ${props => {
+    switch (props.children) {
+      case 'Main':
+        return 'rgba(25, 118, 210, 0.1)';
+      case 'Music':
+        return 'rgba(76, 175, 80, 0.1)';
+      case 'Vocals':
+        return 'rgba(233, 30, 99, 0.1)';
+      case 'Little':
+        return 'rgba(156, 39, 176, 0.1)';
+      case 'JSON':
+        return 'rgba(255, 152, 0, 0.1)';
+      default:
+        return 'rgba(158, 158, 158, 0.1)';
+    }
+  }};
+  color: ${props => {
+    switch (props.children) {
+      case 'Main':
+        return '#1976D2';
+      case 'Music':
+        return '#4CAF50';
+      case 'Vocals':
+        return '#E91E63';
+      case 'Little':
+        return '#9C27B0';
+      case 'JSON':
+        return '#FF9800';
+      default:
+        return '#9E9E9E';
+    }
+  }};
+`;
+
+// Components that reference the base components
 const DropZone = styled.div<{ isDragging?: boolean }>`
   width: 100%;
   padding: 1rem;
@@ -84,6 +253,11 @@ const DropZone = styled.div<{ isDragging?: boolean }>`
     position: relative;
     z-index: 1;
   }
+
+  ${FilePreviewContainer} {
+    width: 100%;
+    margin: 0.5rem 0 0;
+  }
 `;
 
 const BulkDropZone = styled(DropZone)`
@@ -109,12 +283,13 @@ const BulkDropZone = styled(DropZone)`
 `;
 
 const PreviewImage = styled.img`
-  max-width: 70px;
-  max-height: 70px;
-  margin-top: 0.75rem;
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
   border-radius: 6px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
+  flex-shrink: 0; // Prevent image from shrinking
   
   &:hover {
     transform: scale(1.05);
@@ -208,33 +383,6 @@ const CodeExample = styled.pre`
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 `;
 
-const FileName = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  margin-top: 0.5rem;
-  background-color: var(--hover-color, rgba(0, 0, 0, 0.05));
-  border-radius: 6px;
-  font-size: 0.85rem;
-  color: var(--text-color);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  
-  &:hover {
-    background-color: var(--hover-color-darker, rgba(0, 0, 0, 0.08));
-  }
-  
-  svg {
-    color: var(--accent-color);
-    font-size: 1.1rem;
-  }
-`;
-
 const DropText = styled.p`
   margin: 0;
   text-align: center;
@@ -266,18 +414,6 @@ const ErrorMessage = styled.div`
   }
 `;
 
-const FileTypeTag = styled.span`
-  padding: 0.25rem 0.5rem;
-  border-radius: 16px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  margin-left: 0.5rem;
-  background-color: var(--accent-background, rgba(25, 118, 210, 0.1));
-  color: var(--accent-text-color, #1976D2);
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-`;
-
 const FormGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -302,11 +438,23 @@ const FormGridWide = styled.div`
 
 const BackgroundGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+  width: 100%;
   
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  > div {
+    min-width: 0;
+    width: 100%;
+  }
+
+  ${FilePreviewContainer} {
+    width: 100%;
+    flex-wrap: nowrap;
+    box-sizing: border-box;
   }
 `;
 
@@ -901,6 +1049,20 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
     if (backgroundLittleVocalInputRef.current) backgroundLittleVocalInputRef.current.value = '';
   };
 
+  // Update the ref click handler to be type-safe
+  const handleBackgroundClick = (type: string) => {
+    const ref = {
+      'Lyrics Video': backgroundLyricsInputRef,
+      'Vocal Only': backgroundVocalInputRef,
+      'Instrumental Only': backgroundInstrumentalInputRef,
+      'Little Vocal': backgroundLittleVocalInputRef
+    }[type];
+    
+    if (ref && ref.current) {
+      ref.current.click();
+    }
+  };
+
   return (
     <FormContainer>      
       <InfoBox>
@@ -922,17 +1084,87 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         {(mainAudioFile || instrumentalFile || vocalFile || littleVocalFile || lyricsFile || albumArtFile || Object.keys(backgroundFiles).length > 0) && (
           <div style={{ marginTop: '0.75rem', width: '100%' }}>
             <h4>{t('detectedFiles')}</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(370px, 1fr))', gap: '0.5rem' }}>
-              {mainAudioFile && <FileName>{mainAudioFile.name}<FileTypeTag>Main</FileTypeTag></FileName>}
-              {instrumentalFile && <FileName>{instrumentalFile.name}<FileTypeTag>Music</FileTypeTag></FileName>}
-              {vocalFile && <FileName>{vocalFile.name}<FileTypeTag>Vocals</FileTypeTag></FileName>}
-              {littleVocalFile && <FileName>{littleVocalFile.name}<FileTypeTag>Little</FileTypeTag></FileName>}
-              {lyricsFile && <FileName>{lyricsFile.name}<FileTypeTag>JSON</FileTypeTag></FileName>}
-              {albumArtFile && <FileName>{albumArtFile.name}<FileTypeTag>Square</FileTypeTag></FileName>}
+            <CompactFileGrid>
+              {mainAudioFile && (
+                <CompactFilePreview>
+                  <FileIcon type="Main">
+                    <BsMusicNoteBeamed />
+                  </FileIcon>
+                  <FileName>
+                    <span>{mainAudioFile.name}</span>
+                    <CompactFileTag>Main</CompactFileTag>
+                  </FileName>
+                </CompactFilePreview>
+              )}
+              {instrumentalFile && (
+                <CompactFilePreview>
+                  <FileIcon type="Music">
+                    <MdOutlineLibraryMusic />
+                  </FileIcon>
+                  <FileName>
+                    <span>{instrumentalFile.name}</span>
+                    <CompactFileTag>Music</CompactFileTag>
+                  </FileName>
+                </CompactFilePreview>
+              )}
+              {vocalFile && (
+                <CompactFilePreview>
+                  <FileIcon type="Vocals">
+                    <HiOutlineMicrophone />
+                  </FileIcon>
+                  <FileName>
+                    <span>{vocalFile.name}</span>
+                    <CompactFileTag>Vocals</CompactFileTag>
+                  </FileName>
+                </CompactFilePreview>
+              )}
+              {littleVocalFile && (
+                <CompactFilePreview>
+                  <FileIcon type="Little">
+                    <HiOutlineMicrophone />
+                  </FileIcon>
+                  <FileName>
+                    <span>{littleVocalFile.name}</span>
+                    <CompactFileTag>Little</CompactFileTag>
+                  </FileName>
+                </CompactFilePreview>
+              )}
+              {lyricsFile && (
+                <CompactFilePreview>
+                  <FileIcon type="JSON">
+                    <BsFileEarmarkText />
+                  </FileIcon>
+                  <FileName>
+                    <span>{lyricsFile.name}</span>
+                    <CompactFileTag>JSON</CompactFileTag>
+                  </FileName>
+                </CompactFilePreview>
+              )}
+              {albumArtFile && (
+                <CompactFilePreview>
+                  <PreviewImage 
+                    src={URL.createObjectURL(albumArtFile)} 
+                    alt="Album Art Preview" 
+                  />
+                  <FileName>
+                    <span>{albumArtFile.name}</span>
+                    <CompactFileTag>Square</CompactFileTag>
+                  </FileName>
+                </CompactFilePreview>
+              )}
               {Object.entries(backgroundFiles).map(([type, file]) => (
-                <FileName key={type}>{file?.name}<FileTypeTag>BG</FileTypeTag></FileName>
+                <CompactFilePreview key={type}>
+                  <PreviewImage 
+                    src={URL.createObjectURL(file!)} 
+                    alt={`${type} Background`} 
+                  />
+                  <FileName>
+                    <span>{file?.name}</span>
+                    <CompactFileTag>BG</CompactFileTag>
+                  </FileName>
+                </CompactFilePreview>
               ))}
-            </div>
+            </CompactFileGrid>
           </div>
         )}
       </BulkDropZone>
@@ -1114,10 +1346,15 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
                 onChange={(e) => handleImageChange(e, 'albumArt')}
               />
               {albumArtFile && (
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <PreviewImage src={URL.createObjectURL(albumArtFile)} alt="Album Art Preview" />
-                  <FileName style={{ marginLeft: '0.5rem' }}>{albumArtFile.name}</FileName>
-                </div>
+                <FilePreviewContainer>
+                  <PreviewImage 
+                    src={URL.createObjectURL(albumArtFile)} 
+                    alt="Album Art Preview" 
+                  />
+                  <FileName>
+                    <span>{albumArtFile.name}</span>
+                  </FileName>
+                </FilePreviewContainer>
               )}
             </DropZone>
           </div>
@@ -1140,15 +1377,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
                 onDragOver={handleDragOver}
                 onDragEnter={(e) => handleDragEnter(e, `background${type.replace(' ', '')}`)}
                 onDragLeave={(e) => handleDragLeave(e, `background${type.replace(' ', '')}`)}
-                onClick={() => {
-                  const ref = {
-                    'Lyrics Video': backgroundLyricsInputRef,
-                    'Vocal Only': backgroundVocalInputRef,
-                    'Instrumental Only': backgroundInstrumentalInputRef,
-                    'Little Vocal': backgroundLittleVocalInputRef
-                  }[type]!;
-                  ref.current?.click();
-                }}
+                onClick={() => handleBackgroundClick(type)}
               >
                 <DropText>{t('dragAndDropImage')}</DropText>
                 <FileInput 
@@ -1163,15 +1392,15 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
                   onChange={(e) => handleImageChange(e, 'background', type as VideoMetadata['videoType'])}
                 />
                 {backgroundFiles[type as VideoMetadata['videoType']] && (
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <FilePreviewContainer>
                     <PreviewImage 
                       src={URL.createObjectURL(backgroundFiles[type as VideoMetadata['videoType']]!)} 
                       alt={`${type} Background`} 
                     />
-                    <FileName style={{ marginLeft: '0.5rem' }}>
-                      {backgroundFiles[type as VideoMetadata['videoType']]?.name}
+                    <FileName>
+                      <span>{backgroundFiles[type as VideoMetadata['videoType']]?.name}</span>
                     </FileName>
-                  </div>
+                  </FilePreviewContainer>
                 )}
               </DropZone>
             </div>
