@@ -235,9 +235,10 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
   return (
     <WorkspaceContainer>
       <WorkspaceTopSection>
-        <UploadFormCard>
+        <UploadFormCard data-tab-id={tabId}>
           <h2>{t('uploadFiles')}</h2>
           <UploadForm
+            key={tabId} // Add this key to ensure each tab has its own instance
             onFilesChange={handleFilesChange}
             onVideoPathChange={path => updateTabContent(tabId, { videoPath: path })}
             initialValues={{
@@ -264,7 +265,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
             <PreviewGrid>
               <PreviewContainer>
                 <Player
-                  key={`player-${metadata.videoType}-${albumArtUrl}-${backgroundUrls[metadata.videoType] || ''}-${audioUrls.main}-${audioUrls.instrumental}-${audioUrls.vocal}-${audioUrls.littleVocal}`}
+                  key={`${tabId}-${metadata.videoType}-${metadata.artist}-${metadata.songTitle}-${audioUrls.main}-${audioUrls.instrumental}-${audioUrls.vocal}-${audioUrls.littleVocal}-${albumArtUrl}-${JSON.stringify(backgroundUrls)}`}
                   component={LyricsVideoContent}
                   durationInFrames={durationInFrames}
                   compositionWidth={1920}
