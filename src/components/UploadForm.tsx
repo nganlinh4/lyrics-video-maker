@@ -902,9 +902,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
   };
 
   return (
-    <FormContainer>
-      <h2>{t('uploadFiles')}</h2>
-      
+    <FormContainer>      
       <InfoBox>
         <strong>{t('quickUpload')}:</strong> {t('quickUploadDescription')}
       </InfoBox>
@@ -978,7 +976,6 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
       </FormGrid>
 
       <Section>
-        <h3>{t('audioFiles')}</h3>
         <FormGridWide>
           <div>
             <InputLabel>{t('mainAudioFile')}</InputLabel>

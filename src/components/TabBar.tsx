@@ -50,7 +50,6 @@ const TabBarContainer = styled.div`
 
 const TabsWrapper = styled.div`
   display: flex;
-  flex-grow: 1;
   overflow-x: auto;
   scrollbar-width: none;
   
