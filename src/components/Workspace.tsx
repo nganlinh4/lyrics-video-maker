@@ -150,11 +150,13 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
     newLyrics: LyricEntry[] | null,
     newAlbumArtFile: File | null,
     newBackgroundFiles: {[key: string]: File | null},
-    newMetadata: VideoMetadata
+    newMetadata: VideoMetadata,
+    newLyricsFile: File | null  // Add lyricsFile parameter
   ) => {
     let newDuration = durationInSeconds;
 
-    if (newAudioFiles.main) {
+    // Calculate duration if we have a new main audio file
+    if (newAudioFiles.main && (!audioFiles?.main || newAudioFiles.main !== audioFiles.main)) {
       const audio = new Audio(URL.createObjectURL(newAudioFiles.main));
       await new Promise<void>(resolve => {
         audio.addEventListener('loadedmetadata', () => {
@@ -172,10 +174,11 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
       littleVocal: newAudioFiles.littleVocal || null
     };
 
-    // Update the tab content
+    // Update the tab content all at once to ensure state consistency
     updateTabContent(tabId, {
       audioFiles: normalizedAudioFiles,
       lyrics: newLyrics,
+      lyricsFile: newLyricsFile,  // Add lyricsFile to the update
       albumArtFile: newAlbumArtFile,
       backgroundFiles: newBackgroundFiles,
       metadata: newMetadata,
@@ -249,6 +252,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
                 littleVocal: audioFiles.littleVocal || null
               },
               lyrics,
+              lyricsFile: workspaceData.lyricsFile,  // Add lyricsFile to initialValues
               albumArtFile,
               backgroundFiles,
               metadata

@@ -8,6 +8,7 @@ export interface WorkspaceTab {
   active: boolean;
   audioFiles: AudioFiles;
   lyrics: LyricEntry[] | null;
+  lyricsFile: File | null;  // Add this property
   albumArtFile: File | null;
   backgroundFiles: { [key: string]: File | null };
   metadata: VideoMetadata;
@@ -27,6 +28,7 @@ export const createEmptyWorkspace = (id: string, name: string): WorkspaceTab => 
     littleVocal: null
   },
   lyrics: null,
+  lyricsFile: null,  // Add this property
   albumArtFile: null,
   backgroundFiles: {},
   metadata: {
