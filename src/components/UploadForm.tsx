@@ -15,7 +15,6 @@ const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number) => {
 };
 
 const FormContainer = styled.div`
-  max-width: 800px;
   margin: 1.5rem auto;
   padding: 1.5rem;
   border-radius: 12px;
@@ -878,7 +877,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         {(mainAudioFile || instrumentalFile || vocalFile || littleVocalFile || lyricsFile || albumArtFile || Object.keys(backgroundFiles).length > 0) && (
           <div style={{ marginTop: '0.75rem', width: '100%' }}>
             <h4>{t('detectedFiles')}</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(370px, 1fr))', gap: '0.5rem' }}>
               {mainAudioFile && <FileName>{mainAudioFile.name}<FileTypeTag>Main</FileTypeTag></FileName>}
               {instrumentalFile && <FileName>{instrumentalFile.name}<FileTypeTag>Music</FileTypeTag></FileName>}
               {vocalFile && <FileName>{vocalFile.name}<FileTypeTag>Vocals</FileTypeTag></FileName>}

@@ -170,7 +170,7 @@ const Controls = styled.div`
 
 const TwoColumnLayout = styled.div`
   display: grid;
-  grid-template-columns: 1fr 350px;
+  grid-template-columns: 1fr 450px;
   gap: 2rem;
   max-width: 1600px;
   margin: 0 auto;
