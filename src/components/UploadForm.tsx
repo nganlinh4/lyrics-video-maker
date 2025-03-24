@@ -65,9 +65,10 @@ const FilePreviewContainer = styled.div`
 `;
 
 const FileName = styled.div`
-  display: flex;
+  display: grid;
   align-items: center;
   gap: 0.35rem;
+  grid-template-columns: 1fr auto;
   min-width: 0;
   flex: 1;
   font-size: 0.85rem;
