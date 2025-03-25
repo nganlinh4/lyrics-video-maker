@@ -81,28 +81,6 @@ const StopButton = styled(RemoveButton)`
   }
 `;
 
-const DownloadButton = styled.a`
-  display: inline-flex;
-  align-items: center;
-  background: linear-gradient(135deg, var(--success-color), #2e7d32);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-  
-  svg {
-    margin-right: 0.5rem;
-  }
-`;
-
 const EmptyQueue = styled.div`
   padding: 2rem;
   text-align: center;
@@ -139,11 +117,9 @@ const TrashIcon = () => (
   </svg>
 );
 
-const DownloadIcon = () => (
+const FolderIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-    <polyline points="7 10 12 15 17 10"></polyline>
-    <line x1="12" y1="15" x2="12" y2="3"></line>
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
   </svg>
 );
 
@@ -182,7 +158,7 @@ export interface QueueItemData {
 const QueueManager: React.FC = () => {
   const { t } = useLanguage();
   const { queue: queueItems, removeFromQueue, clearQueue: clearQueueContext, currentProcessingItem } = useQueue();
-  
+
   // Sort queue items to ensure processing items are shown first,
   // and pending items maintain their original order
   const sortedQueueItems = [...queueItems].sort((a, b) => {
@@ -326,14 +302,6 @@ const QueueManager: React.FC = () => {
                   <RemoveButton onClick={() => removeQueueItem(item.id)}>
                     <TrashIcon /> {t('remove')}
                   </RemoveButton>
-                </Tooltip>
-              )}
-              
-              {item.status === 'completed' && item.outputPath && (
-                <Tooltip data-tooltip="Download rendered video">
-                  <DownloadButton href={item.outputPath} download>
-                    <DownloadIcon /> Download
-                  </DownloadButton>
                 </Tooltip>
               )}
             </QueueItemActions>
