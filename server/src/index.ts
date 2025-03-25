@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import fs from 'fs';
 import path from 'path';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition, getCompositions } from '@remotion/renderer';
@@ -49,6 +50,24 @@ app.post('/upload/:type', upload.single('file'), (req, res) => {
     url,
     filename: req.file.filename
   });
+});
+
+// Clear cache endpoint
+app.post('/api/clear-cache', (req, res) => {
+  try {
+    const uploadsDir = path.join(__dirname, '..', 'uploads');
+    const files = fs.readdirSync(uploadsDir);
+    
+    files.forEach(file => {
+      const filePath = path.join(uploadsDir, file);
+      fs.unlinkSync(filePath);
+    });
+
+    res.status(200).json({ message: 'Cache cleared successfully' });
+  } catch (error) {
+    console.error('Error clearing cache:', error);
+    res.status(500).json({ error: 'Failed to clear cache' });
+  }
 });
 
 // Helper function to verify assets on the server side

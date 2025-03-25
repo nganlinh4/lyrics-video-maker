@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const multer_1 = __importDefault(require("multer"));
+const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const bundler_1 = require("@remotion/bundler");
 const renderer_1 = require("@remotion/renderer");
@@ -47,6 +48,22 @@ app.post('/upload/:type', upload.single('file'), (req, res) => {
         url,
         filename: req.file.filename
     });
+});
+// Clear cache endpoint
+app.post('/api/clear-cache', (req, res) => {
+    try {
+        const uploadsDir = path_1.default.join(__dirname, '..', 'uploads');
+        const files = fs_1.default.readdirSync(uploadsDir);
+        files.forEach(file => {
+            const filePath = path_1.default.join(uploadsDir, file);
+            fs_1.default.unlinkSync(filePath);
+        });
+        res.status(200).json({ message: 'Cache cleared successfully' });
+    }
+    catch (error) {
+        console.error('Error clearing cache:', error);
+        res.status(500).json({ error: 'Failed to clear cache' });
+    }
 });
 // Helper function to verify assets on the server side
 function verifyServerAssets(videoType, audioUrl, instrumentalUrl, vocalUrl, littleVocalUrl, backgroundImagesMap = {}, backgroundImageUrl) {

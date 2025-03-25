@@ -80,7 +80,14 @@ const AppContent: React.FC = () => {
         </QueueColumn>
       </TwoColumnLayout>
       <Footer>
-        <p>© {new Date().getFullYear()} Lyrics Video Maker</p>
+        <p>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+          © {new Date().getFullYear()} Lyrics Video Maker
+        </p>
         <p>Version 1.0.0</p>
       </Footer>
     </PageContainer>
@@ -298,16 +305,29 @@ const PageContainer = styled.div`
 `;
 
 const Footer = styled.footer`
-  text-align: center;
-  padding: 1.5rem;
-  margin-top: 2rem;
-  background-color: var(--footer-background);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 2rem;
+  background-color: var(--card-background);
   color: var(--footer-text);
+  font-size: 0.85rem;
   border-top: 1px solid var(--border-color);
-  
+  margin-top: auto;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+    padding: 0.75rem 1rem;
+  }
+
   p {
-    margin: 0.5rem 0;
-    font-size: 0.9rem;
+    margin: 0;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 `;
 

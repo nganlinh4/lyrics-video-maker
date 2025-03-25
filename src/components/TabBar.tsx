@@ -36,12 +36,17 @@ const TabBarContainer = styled.div`
   align-items: center;
   background-color: var(--tab-background);
   border-bottom: 1px solid var(--border-color);
-  height: 40px;
+  height: 48px;
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  padding: 0 8px;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  backdrop-filter: blur(8px);
   
   &::-webkit-scrollbar {
     display: none;
@@ -52,6 +57,8 @@ const TabsWrapper = styled.div`
   display: flex;
   overflow-x: auto;
   scrollbar-width: none;
+  gap: 2px;
+  padding: 6px 0;
   
   &::-webkit-scrollbar {
     display: none;
@@ -63,31 +70,34 @@ const TabItem = styled.div<{ active: boolean }>`
   align-items: center;
   min-width: 160px;
   max-width: 240px;
-  height: 38px;
-  padding: 0 15px;
+  height: 36px;
+  padding: 0 16px;
   background-color: ${props => props.active ? 'var(--active-tab)' : 'var(--tab-background)'};
-  border-radius: 8px 8px 0 0;
-  margin-right: 1px;
-  margin-left: 1px;
+  border-radius: 8px;
+  margin: 0 1px;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   position: relative;
-  transition: background-color 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: ${props => props.active ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none'};
   
   &:hover {
     background-color: ${props => props.active ? 'var(--active-tab)' : 'var(--hover-color)'};
+    transform: translateY(-1px);
   }
   
-  &::after {
+  &::before {
     content: '';
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     height: 2px;
-    background-color: ${props => props.active ? 'var(--accent-color)' : 'transparent'};
+    background: ${props => props.active ? 'linear-gradient(90deg, var(--accent-color), var(--accent-color-secondary))' : 'transparent'};
+    border-radius: 2px;
+    transition: all 0.3s ease;
   }
 `;
 
@@ -96,15 +106,21 @@ const TabTitle = styled.div`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 13px;
+  font-size: 0.9rem;
+  font-weight: 500;
   color: var(--text-color);
   margin-right: 8px;
-  transition: color 0.3s;
+  transition: all 0.3s ease;
+  opacity: 0.9;
+  
+  ${TabItem}:hover & {
+    opacity: 1;
+  }
 `;
 
 const CloseButton = styled.div`
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -112,34 +128,46 @@ const CloseButton = styled.div`
   font-size: 16px;
   line-height: 1;
   color: var(--text-color);
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.3s;
+  transition: all 0.2s ease;
+  background-color: transparent;
   
   &:hover {
     background-color: var(--hover-color);
-    color: var(--text-color);
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
   }
 `;
 
 const AddTabButton = styled.div`
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  border-radius: 50%;
-  background-color: var(--hover-color);
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-color-secondary));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1;
-  color: var(--text-color);
+  color: white;
   cursor: pointer;
   margin: 0 8px;
-  transition: background-color 0.2s, color 0.3s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   
   &:hover {
-    background-color: var(--border-color);
+    transform: translateY(-1px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0) scale(0.98);
   }
 `;
 
