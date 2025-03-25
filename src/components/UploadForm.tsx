@@ -54,14 +54,22 @@ const FilePreviewContainer = styled.div`
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  padding: 0.35rem;
-  background-color: var(--hover-color, rgba(0, 0, 0, 0.05));
+  padding: 0.25rem 0.35rem;
+  background-color: var(--card-background, #ffffff);
   border-radius: 6px;
-  margin-top: 0.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+transition: transform 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
 `;
 
 const FileName = styled.div`
@@ -1228,7 +1236,13 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
                 onChange={(e) => handleAudioChange(e, 'main')}
               />
               {mainAudioFile && (
-                <FileName>{mainAudioFile.name}</FileName>
+                <FileName>
+                  <FileIcon type="Main">
+                    <BsMusicNoteBeamed />
+                  </FileIcon>
+                  <span>{mainAudioFile.name}</span>
+                  <FileTypeTag>Main</FileTypeTag>
+                </FileName>
               )}
             </DropZone>
           </div>
@@ -1251,7 +1265,13 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
                 onChange={handleLyricsChange}
               />
               {lyricsFile && (
-                <FileName>{lyricsFile.name}</FileName>
+                <FileName>
+                  <FileIcon type="JSON">
+                    <BsFileEarmarkText />
+                  </FileIcon>
+                  <span>{lyricsFile.name}</span>
+                  <FileTypeTag>JSON</FileTypeTag>
+                </FileName>
               )}
             </DropZone>
           </div>
@@ -1276,7 +1296,13 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
                 onChange={(e) => handleAudioChange(e, 'instrumental')}
               />
               {instrumentalFile && (
-                <FileName>{instrumentalFile.name}</FileName>
+                <FileName>
+                  <FileIcon type="Music">
+                    <MdOutlineLibraryMusic />
+                  </FileIcon>
+                  <span>{instrumentalFile.name}</span>
+                  <FileTypeTag>Music</FileTypeTag>
+                </FileName>
               )}
             </DropZone>
           </div>
@@ -1299,7 +1325,13 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
                 onChange={(e) => handleAudioChange(e, 'vocal')}
               />
               {vocalFile && (
-                <FileName>{vocalFile.name}</FileName>
+                <FileName>
+                  <FileIcon type="Vocals">
+                    <HiOutlineMicrophone />
+                  </FileIcon>
+                  <span>{vocalFile.name}</span>
+                  <FileTypeTag>Vocals</FileTypeTag>
+                </FileName>
               )}
             </DropZone>
           </div>
@@ -1324,7 +1356,13 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
                 onChange={(e) => handleAudioChange(e, 'littleVocal')}
               />
               {littleVocalFile && (
-                <FileName>{littleVocalFile.name}</FileName>
+                <FileName>
+                  <FileIcon type="Little">
+                    <HiOutlineMicrophone />
+                  </FileIcon>
+                  <span>{littleVocalFile.name}</span>
+                  <FileTypeTag>Little</FileTypeTag>
+                </FileName>
               )}
             </DropZone>
           </div>
@@ -1369,43 +1407,44 @@ const UploadForm: React.FC<UploadFormProps> = ({ onFilesChange, onVideoPathChang
         </InfoBox>
 
         <BackgroundGrid>
-          {['Lyrics Video', 'Vocal Only', 'Instrumental Only', 'Little Vocal'].map((type) => (
-            <div key={type}>
-              <InputLabel>{t(type.toLowerCase().replace(' ', ''))}</InputLabel>
-              <DropZone
-                isDragging={isDragging[`background${type.replace(' ', '')}`]}
-                onDrop={(e) => handleDrop(e, 'background', type as VideoMetadata['videoType'])}
-                onDragOver={handleDragOver}
-                onDragEnter={(e) => handleDragEnter(e, `background${type.replace(' ', '')}`)}
-                onDragLeave={(e) => handleDragLeave(e, `background${type.replace(' ', '')}`)}
-                onClick={() => handleBackgroundClick(type)}
-              >
-                <DropText>{t('dragAndDropImage')}</DropText>
-                <FileInput 
-                  ref={{
-                    'Lyrics Video': backgroundLyricsInputRef,
-                    'Vocal Only': backgroundVocalInputRef,
-                    'Instrumental Only': backgroundInstrumentalInputRef,
-                    'Little Vocal': backgroundLittleVocalInputRef
-                  }[type]}
-                  type="file" 
-                  accept="image/*" 
-                  onChange={(e) => handleImageChange(e, 'background', type as VideoMetadata['videoType'])}
-                />
-                {backgroundFiles[type as VideoMetadata['videoType']] && (
-                  <FilePreviewContainer>
-                    <PreviewImage 
-                      src={URL.createObjectURL(backgroundFiles[type as VideoMetadata['videoType']]!)} 
-                      alt={`${type} Background`} 
-                    />
-                    <FileName>
-                      <span>{backgroundFiles[type as VideoMetadata['videoType']]?.name}</span>
-                    </FileName>
-                  </FilePreviewContainer>
-                )}
-              </DropZone>
-            </div>
-          ))}
+{['Lyrics Video', 'Vocal Only', 'Instrumental Only', 'Little Vocal'].map((type) => (
+  <div key={type}>
+    <InputLabel>{t(type.toLowerCase().replace(' ', ''))}</InputLabel>
+    <DropZone
+      isDragging={isDragging[`background${type.replace(' ', '')}`]}
+      onDrop={(e) => handleDrop(e, 'background', type as VideoMetadata['videoType'])}
+      onDragOver={handleDragOver}
+      onDragEnter={(e) => handleDragEnter(e, `background${type.replace(' ', '')}`)}
+      onDragLeave={(e) => handleDragLeave(e, `background${type.replace(' ', '')}`)}
+      onClick={() => handleBackgroundClick(type)}
+    >
+      <DropText>{t('dragAndDropImage')}</DropText>
+      <FileInput 
+        ref={{
+          'Lyrics Video': backgroundLyricsInputRef,
+          'Vocal Only': backgroundVocalInputRef,
+          'Instrumental Only': backgroundInstrumentalInputRef,
+          'Little Vocal': backgroundLittleVocalInputRef
+        }[type]}
+        type="file" 
+        accept="image/*" 
+        onChange={(e) => handleImageChange(e, 'background', type as VideoMetadata['videoType'])}
+      />
+      {backgroundFiles[type as VideoMetadata['videoType']] && (
+        <FilePreviewContainer>
+          <PreviewImage 
+            src={URL.createObjectURL(backgroundFiles[type as VideoMetadata['videoType']]!)} 
+            alt={`${type} Background`} 
+          />
+          <FileName>
+            <span>{backgroundFiles[type as VideoMetadata['videoType']]?.name}</span>
+            <FileTypeTag>{type}</FileTypeTag>
+          </FileName>
+        </FilePreviewContainer>
+      )}
+    </DropZone>
+  </div>
+))}
         </BackgroundGrid>
       </Section>
 
