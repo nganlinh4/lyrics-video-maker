@@ -284,8 +284,8 @@ export const translations: Translations = {
     ko: '최종 비디오'
   },
   noVideo: {
-    en: 'No video to preview.',
-    ko: '미리볼 비디오가 없습니다.'
+    en: 'No video pending to render.',
+    ko: '렌더링 대기 중인 비디오가 없습니다.'
   },
   // VideoPreview translations
   videoDetails: {

@@ -670,7 +670,7 @@ export const RenderControl: React.FC<RenderControlProps> = ({
           </ProgressContainer>
           <ProgressText>
             {currentVersion ? `${currentVersion}: ` : ''}
-            {Math.round(progress * 100)}% {t('complete')}
+            {(progress * 100).toFixed(2)}% {t('complete')}
           </ProgressText>
         </>
       )}

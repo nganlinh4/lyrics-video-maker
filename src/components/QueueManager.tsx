@@ -300,9 +300,9 @@ const QueueManager: React.FC = () => {
             
             {(item.status === 'processing' || item.status === 'pending') && (
               <QueueItemProgressWrapper>
-                <ProgressBar progress={item.progress} color={getStatusColor(item.status)} />
+                <ProgressBar progress={item.progress * 100} color={getStatusColor(item.status)} />
                 <div style={{ textAlign: 'right', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                  {item.progress}% 
+                  {(item.progress * 100).toFixed(2)}%
                 </div>
               </QueueItemProgressWrapper>
             )}
