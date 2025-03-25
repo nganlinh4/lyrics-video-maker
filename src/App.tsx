@@ -13,20 +13,86 @@ import Workspace from './components/Workspace';
 import ThemeLanguageSwitcher from './components/ThemeLanguageSwitcher';
 import { v4 as uuidv4 } from 'uuid';
 
+// Get server URL from environment or default to port 3003
+const SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3003';
+
 // Create our Header component
 const Header: React.FC = () => {
+  const { t } = useLanguage();
+  
+  const handleClearCache = async () => {
+    try {
+      const response = await fetch(`${SERVER_URL}/api/clear-cache`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        alert('Cache cleared successfully');
+      } else {
+        throw new Error('Failed to clear cache');
+      }
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      alert('Failed to clear cache');
+    }
+  };
+
   return (
     <HeaderContainer>
       <Logo>
         <MusicIcon />
-        <h1>{useLanguage().t('appTitle')}</h1>
+        <h1>{t('appTitle')}</h1>
       </Logo>
       <Controls>
+        <ControlButton onClick={handleClearCache} title="Clear uploaded files cache">
+          <DeleteIcon />
+          {t('clearCache')}
+        </ControlButton>
         <ThemeLanguageSwitcher />
       </Controls>
     </HeaderContainer>
   );
 };
+
+const ControlButton = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--header-text);
+  padding: 0.5rem 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  height: 2.25rem;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+`;
+
+const DeleteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6h18"></path>
+    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+  </svg>
+);
 
 // Icon components
 const SunIcon = () => (

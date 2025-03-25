@@ -48,6 +48,10 @@ export const translations: Translations = {
     en: 'Korean',
     ko: '한국어'
   },
+  clearCache: {
+    en: 'Clear Cache',
+    ko: '캐시 지우기'
+  },
   
   // Add the missing translation keys
   note: {
