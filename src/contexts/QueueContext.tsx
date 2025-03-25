@@ -52,12 +52,14 @@ export const QueueProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const removeFromQueue = (id: string) => {
+    // Don't allow removing currently processing items
+    if (id === currentProcessingItem) return;
     setQueue(prevQueue => prevQueue.filter(item => item.id !== id));
   };
 
   const clearQueue = () => {
     // Only clear non-processing items
-    setQueue(prevQueue => prevQueue.filter(item => item.status === 'processing'));
+    setQueue(prevQueue => prevQueue.filter(item => item.id === currentProcessingItem));
   };
 
   const updateQueueItem = (id: string, updates: Partial<QueueItem>) => {

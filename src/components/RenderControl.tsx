@@ -140,7 +140,6 @@ export const RenderControl: React.FC<RenderControlProps> = ({
   const handleAddCurrentVersionToQueue = () => {
     if (!canAddToQueue || !audioFile) return;
 
-    // Add only the current version (selected in metadata.videoType)
     addToQueue({
       audioFile,
       lyrics: lyrics || [],
@@ -148,17 +147,12 @@ export const RenderControl: React.FC<RenderControlProps> = ({
       albumArtFile,
       backgroundFiles: backgroundFiles || {},
       metadata: {
-        artist: metadata.artist,
-        songTitle: metadata.songTitle,
-        videoType: metadata.videoType,
-        lyricsLineThreshold: metadata.lyricsLineThreshold,
-        metadataPosition: metadata.metadataPosition,
-        metadataWidth: metadata.metadataWidth
+        ...metadata,
+        videoType: metadata.videoType
       },
       vocalFile,
       instrumentalFile,
       littleVocalFile,
-      // Flag to indicate this is only for a single version
       singleVersion: true
     });
   };
@@ -167,26 +161,24 @@ export const RenderControl: React.FC<RenderControlProps> = ({
   const handleAddAllVersionsToQueue = () => {
     if (!canAddToQueue || !audioFile) return;
 
-    // Add all four versions to the queue
-    addToQueue({
-      audioFile,
-      lyrics: lyrics || [],
-      durationInSeconds,
-      albumArtFile,
-      backgroundFiles: backgroundFiles || {},
-      metadata: {
-        artist: metadata.artist,
-        songTitle: metadata.songTitle,
-        videoType: metadata.videoType, // This will be overridden for each version in the processing phase
-        lyricsLineThreshold: metadata.lyricsLineThreshold,
-        metadataPosition: metadata.metadataPosition,
-        metadataWidth: metadata.metadataWidth
-      },
-      vocalFile,
-      instrumentalFile,
-      littleVocalFile,
-      // Flag to indicate all versions should be rendered
-      allVersions: true
+    // Add each video type as a separate queue item, in reverse order
+    // This ensures they'll be processed in the correct order (Lyrics Video first)
+    [...videoTypes].reverse().forEach((videoType) => {
+      addToQueue({
+        audioFile,
+        lyrics: lyrics || [],
+        durationInSeconds,
+        albumArtFile,
+        backgroundFiles: backgroundFiles || {},
+        metadata: {
+          ...metadata,
+          videoType
+        },
+        vocalFile,
+        instrumentalFile,
+        littleVocalFile,
+        singleVersion: true
+      });
     });
   };
 
@@ -194,6 +186,7 @@ export const RenderControl: React.FC<RenderControlProps> = ({
   useEffect(() => {
     const processNextQueueItem = async () => {
       // If already processing or queue is empty, do nothing
+      let currentItemId: string | null = null;
       if (isProcessing || queue.length === 0) return;
       
       // Find the first pending item
@@ -201,6 +194,7 @@ export const RenderControl: React.FC<RenderControlProps> = ({
       if (!nextItem) return;
       
       // Set as currently processing
+      currentItemId = nextItem.id;
       setCurrentProcessingItem(nextItem.id);
       updateQueueItem(nextItem.id, { status: 'processing', progress: 0 });
       
@@ -257,14 +251,19 @@ export const RenderControl: React.FC<RenderControlProps> = ({
               ...typeSpecificAudioConfig
             },
             (progress) => {
-              if (progress.status === 'error') {
-                updateQueueItem(nextItem.id, { 
-                  error: `Error rendering ${videoType}: ${progress.error}`
-                });
-              } else {
-                updateQueueItem(nextItem.id, { 
-                  progress: progress.progress
-                });
+              // Only update if this is still the current processing item
+              const currentItemId = nextItem.id; // Store the ID at render start
+              // Compare against stored ID rather than currentProcessingItem
+              if (nextItem.id === currentItemId) {
+                if (progress.status === 'error') {
+                  updateQueueItem(nextItem.id, { 
+                    error: `Error rendering ${videoType}: ${progress.error}`
+                  });
+                } else {
+                  updateQueueItem(nextItem.id, { 
+                    progress: progress.progress
+                  });
+                }
               }
             }
           );
@@ -300,6 +299,7 @@ export const RenderControl: React.FC<RenderControlProps> = ({
       } finally {
         // Clear current processing item
         setCurrentProcessingItem(null);
+        currentItemId = null;
       }
     };
 

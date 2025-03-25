@@ -181,39 +181,68 @@ export interface QueueItemData {
 // We no longer need the props since we'll use the context
 const QueueManager: React.FC = () => {
   const { t } = useLanguage();
-  const { queue: queueItems, removeFromQueue, clearQueue: clearQueueContext } = useQueue();
+  const { queue: queueItems, removeFromQueue, clearQueue: clearQueueContext, currentProcessingItem } = useQueue();
   
-  // Convert queue items from QueueContext to match the QueueItemData format
-  const queue = queueItems.map((item: QueueItemType) => ({
-    id: item.id,
-    status: mapStatus(item.status),
-    progress: item.progress,
-    artist: item.metadata.artist,
-    songTitle: item.metadata.songTitle,
-    videoType: item.metadata.videoType,
-    outputPath: item.result?.[item.metadata.videoType],
-    errorMessage: item.error
-  }));
+  // Sort queue items to ensure processing items are shown first,
+  // and pending items maintain their original order
+  const sortedQueueItems = [...queueItems].sort((a, b) => {
+    // Processing items first
+    if (a.id === currentProcessingItem) return -1;
+    if (b.id === currentProcessingItem) return 1;
+    // Then by status (complete items next)
+    if (a.status === 'complete' && b.status !== 'complete') return -1;
+    if (b.status === 'complete' && a.status !== 'complete') return 1;
+    // Then by error status
+    if (a.status === 'error' && b.status !== 'error') return -1;
+    if (b.status === 'error' && a.status !== 'error') return 1;
+    // Maintain original order for pending items
+    return queueItems.indexOf(a) - queueItems.indexOf(b);
+  });
   
-  // Helper function to map status values between interfaces
-  function mapStatus(status: 'pending' | 'processing' | 'complete' | 'error'): QueueItemStatus {
-    switch(status) {
-      case 'pending': return 'pending';
-      case 'processing': return 'processing';
-      case 'complete': return 'completed';
-      case 'error': return 'failed';
-      default: return 'pending';
+  // Convert queue items to display data
+  const queue = sortedQueueItems.map((item: QueueItemType) => {
+    // Determine the actual display status
+    let displayStatus: QueueItemStatus;
+    let displayProgress: number;
+
+    if (item.id === currentProcessingItem) {
+      // This is the currently processing item
+      displayStatus = 'processing';
+      displayProgress = item.progress;
+    } else if (item.status === 'complete') {
+      // Item is complete
+      displayStatus = 'completed';
+      displayProgress = 1;
+    } else if (item.status === 'error') {
+      // Item has failed
+      displayStatus = 'failed';
+      displayProgress = 0;
+    } else {
+      // All other items should show as pending
+      displayStatus = 'pending';
+      displayProgress = 0;
     }
-  }
+
+    return {
+      id: item.id,
+      status: displayStatus,
+      progress: displayProgress,
+      artist: item.metadata.artist,
+      songTitle: item.metadata.songTitle,
+      videoType: item.metadata.videoType,
+      outputPath: item.result?.[item.metadata.videoType],
+      errorMessage: item.error
+    };
+  });
   
   const removeQueueItem = (id: string) => {
     removeFromQueue(id);
   };
   
   const clearQueue = () => {
-    // Only remove non-processing items (we can implement this using the context)
+    // Only remove non-processing items
     queueItems.forEach((item: QueueItemType) => {
-      if (item.status !== 'processing') {
+      if (item.id !== currentProcessingItem) {
         removeFromQueue(item.id);
       }
     });
