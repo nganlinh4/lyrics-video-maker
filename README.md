@@ -1,70 +1,80 @@
-# Getting Started with Create React App
+# Lyrics Video Maker
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React + Remotion application for creating dynamic lyrics videos with multiple audio track support and GPU-accelerated rendering.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- Create lyrics videos with synchronized text
+- Support for multiple audio tracks:
+  - Main audio
+  - Instrumental
+  - Vocal only
+  - Little vocal mix
+- Custom background images per video type
+- Theme switching (light/dark)
+- Multi-language support
+- Tab-based workspace
+- Render queue management
+- GPU-accelerated video rendering (Vulkan)
 
-### `npm start`
+## Technologies
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Frontend:
+  - React 19
+  - Remotion (video rendering)
+  - styled-components
+  - React Router
+- Backend:
+  - Express
+  - Multer (file uploads)
+  - Remotion renderer
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Installation
 
-### `npm test`
+1. Clone the repository
+2. Install dependencies:
+```bash
+npm install
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Running the Application
 
-### `npm run build`
+Run the application in development mode:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. **First terminal** - Frontend (React):
+```bash
+npm start
+```
+Runs on port 3002
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. **Second terminal** - Backend (Express):
+```bash
+npm run server:start
+```
+Runs on port 3003
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Alternatively, you can run both with:
+```bash
+npm run server:dev
+```
 
-### `npm run eject`
+## Development Notes
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- The application uses Remotion for video rendering with GPU acceleration
+- Backend provides file upload and video rendering endpoints
+- Frontend manages the workspace and render queue
+- Both light and dark themes are supported
+- Multiple language support is implemented via LanguageContext
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Project Structure
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- `src/` - Frontend React application
+  - `components/` - Reusable components
+  - `contexts/` - Application contexts
+  - `remotion/` - Remotion video compositions
+  - `services/` - API services
+  - `utils/` - Utility functions
+- `server/` - Backend Express server
+  - `src/` - Server source code
+  - `uploads/` - Uploaded files
+  - `output/` - Rendered videos
