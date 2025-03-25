@@ -158,12 +158,12 @@ export const RenderControl: React.FC<RenderControlProps> = ({
   };
 
   // Function to add all versions to queue
-  const handleAddAllVersionsToQueue = () => {
+  const handleAddAllVersionsToQueue = async () => {
     if (!canAddToQueue || !audioFile) return;
 
     // Add each video type as a separate queue item, in reverse order
     // This ensures they'll be processed in the correct order (Lyrics Video first)
-    [...videoTypes].reverse().forEach((videoType) => {
+    for (const videoType of [...videoTypes].reverse()) {
       addToQueue({
         audioFile,
         lyrics: lyrics || [],
@@ -179,7 +179,10 @@ export const RenderControl: React.FC<RenderControlProps> = ({
         littleVocalFile,
         singleVersion: true
       });
-    });
+      
+      // Add a small delay between adding items
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
   };
 
   // Process queue
