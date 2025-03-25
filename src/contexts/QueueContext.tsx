@@ -31,7 +31,6 @@ interface QueueContextType {
   currentProcessingItem: string | null;
   setCurrentProcessingItem: (id: string | null) => void;
   isProcessing: boolean;
-  cancelProcessing: () => void; // Add new function to cancel processing
 }
 
 const QueueContext = createContext<QueueContextType | undefined>(undefined);
@@ -39,8 +38,6 @@ const QueueContext = createContext<QueueContextType | undefined>(undefined);
 export const QueueProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [currentProcessingItem, setCurrentProcessingItem] = useState<string | null>(null);
-  // Flag to track if a cancellation was requested
-  const [cancelRequested, setCancelRequested] = useState<boolean>(false);
 
   const addToQueue = (item: Omit<QueueItem, 'id' | 'status' | 'progress' | 'result'>) => {
     const newItem: QueueItem = {
@@ -71,28 +68,6 @@ export const QueueProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     );
   };
 
-  const cancelProcessing = () => {
-    // If there's a currently processing item
-    if (currentProcessingItem) {
-      // Mark the item as failed
-      updateQueueItem(currentProcessingItem, { 
-        status: 'error', 
-        error: 'Rendering cancelled by user' 
-      });
-      
-      // Clear the current processing item to allow the next item to be processed
-      setCurrentProcessingItem(null);
-      
-      // Set the cancel flag to true so the rendering process knows it should stop
-      setCancelRequested(true);
-      
-      // Reset the cancel flag after a short delay
-      setTimeout(() => {
-        setCancelRequested(false);
-      }, 500);
-    }
-  };
-
   const isProcessing = currentProcessingItem !== null;
 
   return (
@@ -104,8 +79,7 @@ export const QueueProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       updateQueueItem,
       currentProcessingItem,
       setCurrentProcessingItem,
-      isProcessing,
-      cancelProcessing
+      isProcessing
     }}>
       {children}
     </QueueContext.Provider>
