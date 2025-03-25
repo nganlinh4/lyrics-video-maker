@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
-import UploadForm from './components/UploadForm';
+import UploadForm from './components/UploadForm/UploadForm.component';
 import QueueManager from './components/QueueManager';
 import { LyricEntry } from './types';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';

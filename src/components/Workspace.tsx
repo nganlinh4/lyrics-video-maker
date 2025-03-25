@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Player } from '@remotion/player';
-import UploadForm from './UploadForm';
+import UploadForm from './UploadForm/UploadForm.component';
 import { LyricsVideoContent } from './LyricsVideo';
 import { RenderControl } from './RenderControl';
 import VideoPreview from './VideoPreview';
@@ -243,7 +243,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
           <UploadForm
             key={tabId} // Add this key to ensure each tab has its own instance
             onFilesChange={handleFilesChange}
-            onVideoPathChange={path => updateTabContent(tabId, { videoPath: path })}
+            onVideoPathChange={(path: string) => updateTabContent(tabId, { videoPath: path })}
             initialValues={{
               audioFiles: {
                 main: audioFiles.main,
