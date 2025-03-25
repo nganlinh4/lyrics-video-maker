@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import styled from 'styled-components';
 import { 
+  
   CompactFileGrid,
   CompactFilePreview,
   FileIcon,
@@ -37,6 +39,21 @@ const FilePreviewSection: React.FC<FilePreviewSectionProps> = ({
   albumArtFile,
   backgroundFiles
 }) => {
+  const [fileStatus, setFileStatus] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const checkFiles = async () => {
+      const status = {
+        main: !!mainAudioFile,
+        instrumental: !!instrumentalFile,
+        vocal: !!vocalFile,
+        littleVocal: !!littleVocalFile
+      };
+      setFileStatus(status);
+    };
+    checkFiles();
+  }, [mainAudioFile, instrumentalFile, vocalFile, littleVocalFile]);
+
   return (
     <CompactFileGrid>
       {mainAudioFile && (
@@ -47,6 +64,8 @@ const FilePreviewSection: React.FC<FilePreviewSectionProps> = ({
           <FileName>
             <span>{mainAudioFile.name}</span>
             <CompactFileTag>Main</CompactFileTag>
+            {fileStatus.main && <CompactFileTag status="success">✓</CompactFileTag>}
+            <FileSize>{formatFileSize(mainAudioFile.size)}</FileSize>
           </FileName>
         </CompactFilePreview>
       )}
@@ -58,6 +77,8 @@ const FilePreviewSection: React.FC<FilePreviewSectionProps> = ({
           <FileName>
             <span>{instrumentalFile.name}</span>
             <CompactFileTag>Music</CompactFileTag>
+            {fileStatus.instrumental && <CompactFileTag status="success">✓</CompactFileTag>}
+            <FileSize>{formatFileSize(instrumentalFile.size)}</FileSize>
           </FileName>
         </CompactFilePreview>
       )}
@@ -69,6 +90,8 @@ const FilePreviewSection: React.FC<FilePreviewSectionProps> = ({
           <FileName>
             <span>{vocalFile.name}</span>
             <CompactFileTag>Vocals</CompactFileTag>
+            {fileStatus.vocal && <CompactFileTag status="success">✓</CompactFileTag>}
+            <FileSize>{formatFileSize(vocalFile.size)}</FileSize>
           </FileName>
         </CompactFilePreview>
       )}
@@ -80,6 +103,8 @@ const FilePreviewSection: React.FC<FilePreviewSectionProps> = ({
           <FileName>
             <span>{littleVocalFile.name}</span>
             <CompactFileTag>Little</CompactFileTag>
+            {fileStatus.littleVocal && <CompactFileTag status="success">✓</CompactFileTag>}
+            <FileSize>{formatFileSize(littleVocalFile.size)}</FileSize>
           </FileName>
         </CompactFilePreview>
       )}
@@ -91,6 +116,8 @@ const FilePreviewSection: React.FC<FilePreviewSectionProps> = ({
           <FileName>
             <span>{lyricsFile.name}</span>
             <CompactFileTag>JSON</CompactFileTag>
+            <CompactFileTag status="success">✓</CompactFileTag>
+            <FileSize>{formatFileSize(lyricsFile.size)}</FileSize>
           </FileName>
         </CompactFilePreview>
       )}
@@ -103,6 +130,8 @@ const FilePreviewSection: React.FC<FilePreviewSectionProps> = ({
           <FileName>
             <span>{albumArtFile.name}</span>
             <CompactFileTag>Square</CompactFileTag>
+            <CompactFileTag status="success">✓</CompactFileTag>
+            <FileSize>{formatFileSize(albumArtFile.size)}</FileSize>
           </FileName>
         </CompactFilePreview>
       )}
@@ -115,11 +144,26 @@ const FilePreviewSection: React.FC<FilePreviewSectionProps> = ({
           <FileName>
             <span>{file?.name}</span>
             <CompactFileTag>BG</CompactFileTag>
+            <CompactFileTag status="success">✓</CompactFileTag>
+            <FileSize>{file ? formatFileSize(file.size) : ''}</FileSize>
           </FileName>
         </CompactFilePreview>
       ))}
     </CompactFileGrid>
   );
 };
+
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const FileSize = styled.span`
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+`;
 
 export default FilePreviewSection;

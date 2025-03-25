@@ -104,7 +104,7 @@ export const CompactFilePreview = styled(FilePreviewContainer)`
 export const CompactFileGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 0.5rem;
+  gap: 0.25rem;
   width: 100%;
   margin-top: 0.75rem;
 `;
@@ -120,17 +120,17 @@ export const FileIcon = styled.div<{ type: string }>`
   background-color: ${props => {
     switch (props.type) {
       case 'Main':
-        return 'rgba(25, 118, 210, 0.1)';
+        return 'rgba(25, 118, 210, 0.15)';
       case 'Music':
-        return 'rgba(76, 175, 80, 0.1)';
+        return 'rgba(76, 175, 80, 0.15)';
       case 'Vocals':
-        return 'rgba(233, 30, 99, 0.1)';
+        return 'rgba(233, 30, 99, 0.15)';
       case 'Little':
-        return 'rgba(156, 39, 176, 0.1)';
+        return 'rgba(156, 39, 176, 0.15)';
       case 'JSON':
-        return 'rgba(255, 152, 0, 0.1)';
+        return 'rgba(255, 152, 0, 0.155)';
       default:
-        return 'rgba(158, 158, 158, 0.1)';
+        return 'rgba(158, 158, 158, 0.15)';
     }
   }};
   color: ${props => {
@@ -165,27 +165,41 @@ export const FileTypeTag = styled.span`
   text-transform: uppercase;
 `;
 
-export const CompactFileTag = styled(FileTypeTag)`
+export const CompactFileTag = styled(FileTypeTag)<{ status?: 'success' | 'error' }>`
   padding: 0.1rem 0.3rem;
   font-size: 0.55rem;
   border-radius: 10px;
   background-color: ${props => {
     switch (props.children) {
       case 'Main':
-        return 'rgba(25, 118, 210, 0.1)';
+        return 'rgba(25, 118, 210, 0.2)';
       case 'Music':
-        return 'rgba(76, 175, 80, 0.1)';
+        return 'rgba(76, 175, 80, 0.2)';
       case 'Vocals':
-        return 'rgba(233, 30, 99, 0.1)';
+        return 'rgba(233, 30, 99, 0.2)';
       case 'Little':
-        return 'rgba(156, 39, 176, 0.1)';
+        return 'rgba(156, 39, 176, 0.2)';
       case 'JSON':
-        return 'rgba(255, 152, 0, 0.1)';
+        return 'rgba(255, 152, 0, 0.2)';
       default:
-        return 'rgba(158, 158, 158, 0.1)';
+        return 'rgba(158, 158, 158, 0.2)';
     }
   }};
   color: ${props => {
+    switch (props.status) {
+      case 'success':
+        return '#4CAF50';
+      case 'error':
+        return '#F44336';
+      default:
+        return props.children === 'Main' ? '#1976D2' :
+               props.children === 'Music' ? '#4CAF50' :
+               props.children === 'Vocals' ? '#E91E63' :
+               props.children === 'Little' ? '#9C27B0' :
+               props.children === 'JSON' ? '#FF9800' :
+               props.children === 'Square' ? '#009688' :
+               '#9E9E9E';
+    }
     switch (props.children) {
       case 'Main':
         return '#1976D2';
@@ -199,6 +213,20 @@ export const CompactFileTag = styled(FileTypeTag)`
         return '#FF9800';
       default:
         return '#9E9E9E';
+    }
+  }};
+  margin-left: 0.25rem;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.55rem;
+  border-radius: 10px;
+  background-color: ${props => {
+    switch (props.status) {
+      case 'success':
+        return 'rgba(76, 175, 80, 0.2)';
+      case 'error':
+        return 'rgba(244, 67, 54, 0.2)';
+      default:
+        return 'transparent';
     }
   }};
 `;
@@ -416,12 +444,12 @@ export const FormGrid = styled.div`
 
 export const FormGridWide = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 0.75rem;
   margin-bottom: 1rem;
   
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 `;
 
@@ -431,6 +459,7 @@ export const BackgroundGrid = styled.div`
   gap: 1rem;
   width: 100%;
   
+  /* Keep existing mobile styles */
   @media (max-width: 768px) {
     grid-template-columns: minmax(0, 1fr);
   }

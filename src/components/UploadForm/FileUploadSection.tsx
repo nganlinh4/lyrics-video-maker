@@ -1,8 +1,20 @@
 import React from 'react';
-import { DropZone, DropText, FileName, FileTypeTag, FilePreviewContainer, PreviewImage } from './UploadForm.styles';
+import { BsFileEarmarkText, BsMusicNoteBeamed } from 'react-icons/bs';
+import styled from 'styled-components';
+import { 
+  DropZone, 
+  DropText, 
+  FileName, 
+  CompactFileTag,
+  FileIcon,
+  PreviewImage 
+} from './UploadForm.styles';
 
 interface FileUploadSectionProps {
   label: string;
+  h3?: string;
+  h4?: string;
+  h5?: string;
   dropText: string;
   isDragging: boolean;
   file: File | null;
@@ -18,10 +30,13 @@ interface FileUploadSectionProps {
   tag?: string;
 }
 
+
+
 const FileUploadSection: React.FC<FileUploadSectionProps> = ({
   label,
   dropText,
   isDragging,
+  
   file,
   inputRef,
   accept,
@@ -44,32 +59,36 @@ const FileUploadSection: React.FC<FileUploadSectionProps> = ({
         onDragLeave={onDragLeave}
         onClick={onClick}
       >
+        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>{label}</h4>
         <DropText>{dropText}</DropText>
-        <input 
+        
+        {/* Hidden file input */}
+        <input
           ref={inputRef}
           type="file" 
           accept={accept} 
           onChange={onChange}
           style={{ display: 'none' }}
         />
+        
         {file && (
-          isImage ? (
-            <FilePreviewContainer>
+          <div style={{ marginTop: '0.5rem' }}>
+            {isImage ? (
               <PreviewImage 
                 src={URL.createObjectURL(file)} 
                 alt={label} 
               />
-              <FileName>
-                <span>{file.name}</span>
-                {tag && <FileTypeTag>{tag}</FileTypeTag>}
-              </FileName>
-            </FilePreviewContainer>
-          ) : (
+            ) : (
+              <FileIcon type={tag || ''}>
+                {tag === 'JSON' ? <BsFileEarmarkText /> : <BsMusicNoteBeamed />}
+              </FileIcon>
+            )}
+            
             <FileName>
               <span>{file.name}</span>
-              {tag && <FileTypeTag>{tag}</FileTypeTag>}
+              {tag && <CompactFileTag>{tag}</CompactFileTag>}
             </FileName>
-          )
+          </div>
         )}
       </DropZone>
     </div>

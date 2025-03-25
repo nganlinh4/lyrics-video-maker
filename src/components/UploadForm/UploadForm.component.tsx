@@ -109,7 +109,6 @@ const UploadForm: React.FC<UploadFormProps> = ({
 
       <Section>
         <FormGridWide>
-          <h3>{t('mainAudioFile')}</h3>
           <FileUploadSection
             label={t('mainAudioFile')}
             dropText={t('dragAndDropAudio')}
@@ -126,7 +125,6 @@ const UploadForm: React.FC<UploadFormProps> = ({
             tag="Main"
           />
 
-          <h3>{t('lyricsFile')}</h3>
           <FileUploadSection
             label={t('lyricsFile')}
             dropText={t('dragAndDropJson')}
@@ -145,7 +143,6 @@ const UploadForm: React.FC<UploadFormProps> = ({
         </FormGridWide>
 
         <FormGridWide>
-          <h3>{t('instrumentalAudio')}</h3>
           <FileUploadSection
             label={t('instrumentalAudio')}
             dropText={t('dragAndDropAudio')}
@@ -162,7 +159,6 @@ const UploadForm: React.FC<UploadFormProps> = ({
             tag="Music"
           />
 
-          <h3>{t('vocalAudio')}</h3>
           <FileUploadSection
             label={t('vocalAudio')}
             dropText={t('dragAndDropAudio')}
@@ -181,7 +177,6 @@ const UploadForm: React.FC<UploadFormProps> = ({
         </FormGridWide>
 
         <FormGridWide>
-          <h3>{t('littleVocalAudio')}</h3>
           <FileUploadSection
             label={t('littleVocalAudio')}
             dropText={t('dragAndDropAudio')}
@@ -198,7 +193,6 @@ const UploadForm: React.FC<UploadFormProps> = ({
             tag="Little"
           />
 
-          <h3>{t('albumArtOptional')}</h3>
           <FileUploadSection
             label={t('albumArtOptional')}
             dropText={t('dragAndDropImage')}
