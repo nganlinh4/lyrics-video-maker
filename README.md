@@ -2,6 +2,17 @@
 
 A React + Remotion application for creating dynamic lyrics videos with multiple audio track support and GPU-accelerated rendering.
 
+## ⚠️ Usage Restrictions
+**Important:** This application is provided for offline and personal use only. Please note the following restrictions:
+- You may freely use this application for offline and personal purposes
+- You must NOT use the default video template/layout for online platforms like YouTube
+- To publish videos online, you MUST:
+  1. Clone this repository
+  2. Create your own unique video layout/animation/styles
+  3. Modify the visual design to be distinctly different from the original template
+
+These restrictions are in place to prevent template oversaturation and maintain creative diversity.
+
 ## Features
 
 - Create lyrics videos with synchronized text
