@@ -13,7 +13,7 @@ const TabBar: React.FC = () => {
         {tabs.map(tab => (
           <TabItem 
             key={tab.id} 
-            active={tab.id === activeTabId}
+            $active={tab.id === activeTabId}
             onClick={() => activateTab(tab.id)}
           >
             <TabTitle>{tab.name}</TabTitle>
@@ -65,14 +65,14 @@ const TabsWrapper = styled.div`
   }
 `;
 
-const TabItem = styled.div<{ active: boolean }>`
+const TabItem = styled.div<{ $active: boolean }>`
   display: flex;
   align-items: center;
   min-width: 160px;
   max-width: 240px;
   height: 36px;
   padding: 0 16px;
-  background-color: ${props => props.active ? 'var(--active-tab)' : 'var(--tab-background)'};
+  background-color: ${props => props.$active ? 'var(--active-tab)' : 'var(--tab-background)'};
   border-radius: 8px;
   margin: 0 1px;
   cursor: pointer;
@@ -81,10 +81,10 @@ const TabItem = styled.div<{ active: boolean }>`
   text-overflow: ellipsis;
   position: relative;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: ${props => props.active ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none'};
+  box-shadow: ${props => props.$active ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none'};
   
   &:hover {
-    background-color: ${props => props.active ? 'var(--active-tab)' : 'var(--hover-color)'};
+    background-color: ${props => props.$active ? 'var(--active-tab)' : 'var(--hover-color)'};
     transform: translateY(-1px);
   }
   
@@ -95,7 +95,7 @@ const TabItem = styled.div<{ active: boolean }>`
     left: 0;
     right: 0;
     height: 2px;
-    background: ${props => props.active ? 'linear-gradient(90deg, var(--accent-color), var(--accent-color-secondary))' : 'transparent'};
+    background: ${props => props.$active ? 'linear-gradient(90deg, var(--accent-color), var(--accent-color-secondary))' : 'transparent'};
     border-radius: 2px;
     transition: all 0.3s ease;
   }

@@ -131,7 +131,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ tabId }) => {
   }, [isActiveWorkspace, workspaceData?.backgroundFiles]);
 
   // If this workspace is not active, don't render it
-  if (!isActiveWorkspace || !workspaceData) {
+  if (!isActiveWorkspace || !workspaceData || !workspaceData.$active) {
     return null;
   }
 

@@ -324,19 +324,18 @@ export const Spinner = styled.div`
   }
 `;
 
-export const Tab = styled.button<{ active?: boolean }>`
+export const Tab = styled.button<{ $active?: boolean }>`
   padding: 0.75rem 1.5rem;
   border: none;
   background: none;
-  border-bottom: 2px solid ${({ active }) => active ? 'var(--accent-color)' : 'transparent'};
-  color: ${({ active }) => active ? 'var(--accent-color)' : 'var(--text-color)'};
-  font-weight: ${({ active }) => active ? '600' : '400'};
+  border-bottom: 2px solid ${({ $active }) => $active ? 'var(--accent-color)' : 'transparent'};
+  color: ${({ $active }) => $active ? 'var(--accent-color)' : 'var(--text-color)'};
+  font-weight: ${({ $active }) => $active ? '600' : '400'};
   cursor: pointer;
   transition: all 0.2s ease;
   
   &:hover {
     background-color: var(--hover-color);
-    color: var(--accent-color);
   }
 `;
 

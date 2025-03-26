@@ -5,7 +5,7 @@ import { LyricEntry, VideoMetadata, AudioFiles } from '../types';
 export interface WorkspaceTab {
   id: string;
   name: string;
-  active: boolean;
+  $active: boolean;  // Change active to $active
   audioFiles: AudioFiles;
   lyrics: LyricEntry[] | null;
   lyricsFile: File | null;  // Add this property
@@ -20,7 +20,7 @@ export interface WorkspaceTab {
 export const createEmptyWorkspace = (id: string, name: string): WorkspaceTab => ({
   id,
   name,
-  active: false,
+  $active: false,  // Change active to $active
   audioFiles: {
     main: null,
     instrumental: null,
@@ -58,7 +58,7 @@ const TabsContext = createContext<TabsContextType | undefined>(undefined);
 export const TabsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [tabs, setTabs] = useState<WorkspaceTab[]>([
     // Start with one empty workspace
-    { ...createEmptyWorkspace('tab-1', 'New Song 1'), active: true }
+    { ...createEmptyWorkspace('tab-1', 'New Song 1'), $active: true }
   ]);
   const [activeTabId, setActiveTabId] = useState<string>('tab-1');
 
@@ -73,13 +73,13 @@ export const TabsProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Deactivate all existing tabs
     const updatedTabs = tabs.map(tab => ({
       ...tab,
-      active: false
+      $active: false
     }));
     
     // Add the new tab
     setTabs([
       ...updatedTabs,
-      { ...createEmptyWorkspace(newId, newTabName), active: true }
+      { ...createEmptyWorkspace(newId, newTabName), $active: true }
     ]);
     
     // Set the new tab as active
@@ -109,13 +109,13 @@ export const TabsProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             .filter(tab => tab.id !== id)
             .map(tab => ({
               ...tab,
-              active: tab.id === newActiveId
+              $active: tab.id === newActiveId
             }))
         );
       } else {
         // We're closing the last tab, create a new empty one
         const newId = `tab-${Date.now()}`;
-        setTabs([{ ...createEmptyWorkspace(newId, 'New Song 1'), active: true }]);
+        setTabs([{ ...createEmptyWorkspace(newId, 'New Song 1'), $active: true }]);
         setActiveTabId(newId);
       }
     } else {
@@ -132,7 +132,7 @@ export const TabsProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setTabs(prevTabs => 
       prevTabs.map(tab => ({
         ...tab,
-        active: tab.id === id
+        $active: tab.id === id
       }))
     );
   };
