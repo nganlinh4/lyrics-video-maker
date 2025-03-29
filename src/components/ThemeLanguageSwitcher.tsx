@@ -157,6 +157,7 @@ const ThemeLanguageSwitcher: React.FC = () => {
         >
           <option value="en">{t('english')}</option>
           <option value="ko">{t('korean')}</option>
+          <option value="vi">{t('vietnamese')}</option>
         </LanguageSelect>
       </SwitcherGroup>
     </SwitcherContainer>
